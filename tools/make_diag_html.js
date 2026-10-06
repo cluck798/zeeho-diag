@@ -718,6 +718,27 @@ window.onWiFiSelfCheck = function (r) {
   }
   if (so) so.textContent = lines.join('\\n');
 };
+var wps = $('btnWifiPortScan');
+if (wps) wps.onclick = function () {
+  if (typeof r485 !== 'function') { wifiSt('需在 iOS App（TrollStore 安装）内运行'); return; }
+  var h = ($('wifiHost').value || '192.168.0.1').trim();
+  wifiSt('端口扫描 ' + h + ' …（约 2 秒）');
+  var so = $('wifiScanOut'); if (so) so.textContent = '端口扫描 ' + h + ' 中…';
+  r485('wifiPortScan', h, null);
+};
+window.onWifiPortScan = function (r) {
+  var so = $('wifiScanOut');
+  if (!r) { if (so) so.textContent = '端口扫描无响应'; return; }
+  var open = r.open || [];
+  var lines = ['端口扫描 ' + r.host + '：'];
+  (r.results || []).forEach(function (x) {
+    lines.push('  ' + x.port + ' → ' + (x.status === 'open' ? '✅ 开放' : (x.status === 'fail' ? '✖ 关闭' : '✖ 超时')));
+  });
+  lines.push(open.length ? ('✅ 开放端口：' + open.join(', ')) : '✖ 未发现开放端口');
+  lines.push('（把结果截图发给开发者）');
+  if (so) so.textContent = lines.join('\\n');
+  wifiSt(open.length ? ('发现开放端口：' + open.join(', ')) : '未发现开放端口');
+};
 
 // ============ 数据流解析 ============
 function evalItem(it, buf, base) {
@@ -1046,7 +1067,10 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
       <div class="row">
         <button id="btnWifiConn" class="green">连接</button>
         <button id="btnWifiDisc" class="ghost">断开</button>
+      </div>
+      <div class="row">
         <button id="btnWifiScan" class="ghost">🔍 网络自检</button>
+        <button id="btnWifiPortScan" class="ghost">🛰 端口扫描</button>
       </div>
       <div class="log" id="wifiScanOut" style="height:130px"></div>
     </section>

@@ -143,6 +143,18 @@ final class ViewController: UIViewController, WKScriptMessageHandler {
                 }
             }
             reply(nil)
+        case "wifiPortScan":
+            let host = payload.isEmpty ? "192.168.0.1" : payload
+            let ports: [UInt16] = [22, 23, 80, 443, 3000, 5000, 7000, 8000, 8080, 8443, 8888, 9000, 13400]
+            WIFIBridge.shared.probePorts(host: host, ports: ports) { [weak self] res in
+                var out: [String: Any] = ["host": host, "results": res]
+                out["open"] = res.filter { $0["status"] == "open" }.map { $0["port"] ?? "" }
+                let json = (try? JSONSerialization.data(withJSONObject: out)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+                DispatchQueue.main.async {
+                    self?.evaluateJS("window.onWifiPortScan&&window.onWifiPortScan(\(json));")
+                }
+            }
+            reply(nil)
         default:
             reply(nil)
         }

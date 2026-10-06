@@ -137,7 +137,41 @@ final class WIFIBridge {
                 switch st {
                 case .ready: finish("open")
                 case .failed: finish("fail")
-                case .waiting: finish("unreachable")
+                default: break
+                }
+            }
+            c.start(queue: queue)
+            DispatchQueue.global().asyncAfter(deadline: .now() + 1.2) { finish("timeout") }
+        }
+        group.notify(queue: DispatchQueue.global()) { done(results) }
+    }
+
+    // MARK: - 端口扫描（对同一主机的一组端口并发探测，1.2 秒超时）
+    func probePorts(host: String, ports: [UInt16], done: @escaping ([[String: String]]) -> Void) {
+        let group = DispatchGroup()
+        var results: [[String: String]] = []
+        let lock = NSLock()
+        for port in ports {
+            guard let p = NWEndpoint.Port(rawValue: port) else { continue }
+            group.enter()
+            let c = NWConnection(host: NWEndpoint.Host(host), port: p, using: .tcp)
+            var finished = false
+            let finish: (String) -> Void = { status in
+                lock.lock()
+                let already = finished
+                finished = true
+                lock.unlock()
+                if already { return }
+                lock.lock()
+                results.append(["port": "\(port)", "status": status])
+                lock.unlock()
+                c.cancel()
+                group.leave()
+            }
+            c.stateUpdateHandler = { st in
+                switch st {
+                case .ready: finish("open")
+                case .failed: finish("fail")
                 default: break
                 }
             }
