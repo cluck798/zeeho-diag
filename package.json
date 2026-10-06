@@ -1,0 +1,45 @@
+{
+  "name": "zeeho-diag",
+  "productName": "极核诊断工具",
+  "version": "1.0.0",
+  "description": "极核 ZEEHO 车端诊断工具：蓝牙发现、WiFi 直连车辆热点、DoIP/UDS 读取车辆信息与故障码（协议还原自 ZeeCare 1.1.1）",
+  "author": "lucky",
+  "homepage": "https://github.com/cluck798/ZEEHO",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.cluck798.zeehodiag",
+    "productName": "极核诊断工具",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "lib/**/*",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "极核诊断工具"
+    }
+  }
+}

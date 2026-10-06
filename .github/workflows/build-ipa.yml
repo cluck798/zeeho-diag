@@ -1,0 +1,74 @@
+name: build-ipa
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "ios/**"
+      - ".github/workflows/build-ipa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-ipa
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate project and build
+        run: |
+          set -eo pipefail
+          cd ios
+          xcodegen generate
+          xcodebuild -project ZeehoDiag.xcodeproj -scheme ZeehoDiag -configuration Release \
+            -sdk iphoneos -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= \
+            build 2>&1 | tee xcodebuild.log
+
+      - name: Package IPA
+        run: |
+          set -e
+          cd ios
+          rm -rf Payload
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/ZeehoDiag.app Payload/
+          zip -qry ../ZeehoDiag.ipa Payload
+          ls -la ../ZeehoDiag.ipa
+
+      - name: Publish IPA to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: diag-latest
+          name: 极核无线诊断 iOS IPA（巨魔/TrollStore）
+          body: |
+            TrollStore（巨魔）专用未签名 IPA。
+            - 配合 RS485 蓝牙模块（I6328A-485）或 ESP32-CAN 桥使用（详见仓库 README）
+            - 安装：TrollStore 中点击 + 选择本 IPA 即可，永久签名不掉签
+            - 构建提交：${{ github.sha }}
+          files: ZeehoDiag.ipa
+          overwrite: true
+          make_latest: true
+
+      - name: Collect build log on failure
+        if: failure()
+        run: |
+          touch ios/xcodebuild.log
+          tail -c 300000 ios/xcodebuild.log > ios/xcodebuild-tail.log
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: diag-latest
+          name: 极核无线诊断 iOS IPA（巨魔/TrollStore）
+          files: ios/xcodebuild-tail.log
+          overwrite: true

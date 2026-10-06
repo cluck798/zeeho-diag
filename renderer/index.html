@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+<title>极核诊断工具</title>
+<style>
+  :root {
+    --bg: #101418; --panel: #1a2027; --panel2: #212a33; --border: #2d3a46;
+    --text: #dce6ef; --muted: #8296a8; --accent: #35c46f; --accent2: #2f9de0;
+    --warn: #e0a63a; --err: #e05a4e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.6 "Microsoft YaHei", system-ui, sans-serif; }
+  .app { display: flex; flex-direction: column; height: 100vh; }
+  header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 17px; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  .status-pill { margin-left: auto; padding: 3px 12px; border-radius: 999px; font-size: 12px; background: var(--panel2); border: 1px solid var(--border); }
+  .status-pill.ok { color: var(--accent); border-color: var(--accent); }
+  .status-pill.err { color: var(--err); border-color: var(--err); }
+  main { flex: 1; overflow: auto; padding: 16px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-content: start; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .card h2 { font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .step { background: var(--accent2); color: #fff; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .full { grid-column: 1 / -1; }
+  button { background: var(--accent2); color: #fff; border: 0; border-radius: 6px; padding: 7px 16px; font-size: 13px; cursor: pointer; }
+  button:hover { filter: brightness(1.1); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.green { background: var(--accent); }
+  button.ghost { background: var(--panel2); border: 1px solid var(--border); color: var(--text); }
+  input, select { background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 7px 10px; font-size: 13px; outline: none; }
+  input:focus { border-color: var(--accent2); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .dev-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow: auto; }
+  .dev-item { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .dev-item:hover { border-color: var(--accent2); }
+  .dev-item.sel { border-color: var(--accent); }
+  .dev-item .rssi { margin-left: auto; color: var(--muted); font-size: 12px; }
+  .kv { display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; margin-top: 8px; }
+  .kv .k { color: var(--muted); }
+  .kv .v { word-break: break-all; font-family: Consolas, monospace; }
+  .log-box { background: #0c0f12; border: 1px solid var(--border); border-radius: 8px; padding: 10px; height: 190px; overflow: auto; font: 12px/1.7 Consolas, monospace; color: #9fb4c7; white-space: pre-wrap; word-break: break-all; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 12px; background: var(--panel2); border: 1px solid var(--border); color: var(--muted); }
+  .tag.ok { color: var(--accent); border-color: var(--accent); }
+  .tag.err { color: var(--err); border-color: var(--err); }
+  .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--muted); border-top-color: transparent; border-radius: 50%; animation: sp .8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  .ds-grid { margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 8px; max-height: 330px; overflow: auto; }
+  .ds-item { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; }
+  .ds-item .n { color: var(--muted); font-size: 12px; }
+  .ds-item .n .did { opacity: .55; margin-left: 4px; }
+  .ds-item .v { font-size: 18px; font-family: Consolas, monospace; margin-top: 2px; }
+  .ds-item .v small { font-size: 12px; color: var(--muted); margin-left: 4px; }
+  .ds-item.fail { opacity: .4; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>极核诊断工具</h1>
+    <span class="sub">ZeeCare 协议还原 · DoIP/UDS 只读诊断</span>
+    <span class="status-pill" id="connPill">未连接</span>
+  </header>
+  <main>
+    <!-- 步骤1：发现车辆 -->
+    <div class="card">
+      <h2><span class="step">1</span>发现车辆</h2>
+      <div class="row">
+        <button id="btnBleScan">蓝牙扫描车辆</button>
+        <span class="hint">扫描 zeehok1-* 蓝牙广播（约 12 秒）</span>
+      </div>
+      <div class="dev-list" id="devList"></div>
+      <div class="row">
+        <input id="manualName" placeholder="或手动输入蓝牙名，如 zeehok1-abcdef1234" style="flex:1;min-width:220px" />
+        <button class="ghost" id="btnManual">使用</button>
+      </div>
+      <div class="row">
+        <input id="manualVin" placeholder="或输入 VIN 后 8 位以上（OTA 热点直连）" style="flex:1;min-width:220px" />
+        <button class="ghost" id="btnVin">使用</button>
+      </div>
+      <div class="hint" id="credHint"></div>
+    </div>
+
+    <!-- 步骤2：连接车辆热点 -->
+    <div class="card">
+      <h2><span class="step">2</span>连接车辆 WiFi</h2>
+      <div class="row">
+        <input id="ssid" placeholder="SSID（如 ZEEHO-XXXXXX）" style="flex:1" />
+        <input id="pwd" placeholder="密码" style="flex:1" />
+      </div>
+      <div class="row">
+        <button id="btnWifiScan" class="ghost">扫描 ZEEHO 热点</button>
+        <button id="btnWifiConnect" class="green">连接热点</button>
+        <button id="btnWifiDisconnect" class="ghost">断开</button>
+      </div>
+      <div class="row">
+        <span class="tag" id="wifiTag">WiFi: 未知</span>
+        <span class="hint">连接后车辆网关为 192.168.49.1</span>
+      </div>
+    </div>
+
+    <!-- 步骤3：诊断 -->
+    <div class="card full">
+      <h2><span class="step">3</span>车辆诊断（只读）</h2>
+      <div class="row">
+        <button id="btnDiagConnect" class="green">连接诊断接口 (TCP 13400)</button>
+        <button id="btnReadInfo">读取车辆信息</button>
+        <button id="btnCheckOnline" class="ghost">检测 VCDM 在线</button>
+        <button id="btnReadFault" class="ghost">读取故障码</button>
+        <button id="btnDiagDisconnect" class="ghost">断开诊断</button>
+      </div>
+      <div class="kv" id="infoKv" style="display:none"></div>
+      <div class="row" id="faultRow" style="display:none">
+        <span class="k" style="color:var(--muted)">故障码原始响应：</span>
+        <span class="v" id="faultHex" style="font-family:Consolas,monospace;word-break:break-all"></span>
+      </div>
+    </div>
+
+    <!-- 步骤4：实时数据（数据流） -->
+    <div class="card full">
+      <h2><span class="step">4</span>实时数据（数据流 · 实验）</h2>
+      <div class="row">
+        <select id="dsGroup">
+          <option value="bms">电池 BMS（总电压/电流/SOC/单体）</option>
+          <option value="mcu">电机 MCU</option>
+          <option value="vcu">整车 VCU</option>
+          <option value="bms2">电池 BMS（变体）</option>
+          <option value="mcuLite">电机 MCU（精简）</option>
+        </select>
+        <select id="dsTarget">
+          <option value="mcu">目标: MCU(2)</option>
+          <option value="vcdm">目标: VCDM(1)</option>
+        </select>
+        <button id="btnDsRead" class="green">读取一次</button>
+        <button id="btnDsAuto" class="ghost">自动刷新: 关</button>
+      </div>
+      <div class="hint">逐项发送 UDS 0x22 读 DID（数据来源：官方诊断库 ZSCAN-Mb）。若整组超时，切换「目标」再试，即可判断该 ECU 应答挂在哪个地址。停靠时可先用「自定义 DID」小工具试探。</div>
+      <div class="ds-grid" id="dsGrid"></div>
+      <div class="row">
+        <input id="rawDid" placeholder="自定义 DID（如 0D37 / F190）" style="width:200px" />
+        <button id="btnRawDid" class="ghost">读原始响应</button>
+        <span id="rawOut" style="font-family:Consolas,monospace;font-size:12px;word-break:break-all;color:var(--muted)"></span>
+      </div>
+    </div>
+
+    <!-- 日志 -->
+    <div class="card full">
+      <h2>日志 / PDU 监视</h2>
+      <div class="log-box" id="logBox"></div>
+    </div>
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

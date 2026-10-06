@@ -1,0 +1,879 @@
+// make_diag_html.js — 生成 iOS diag.html（RS485/CAN 无线诊断页）
+// 用法：node make_diag_html.js  （输出到 ../ios/App/Resources/diag.html）
+const fs = require('fs');
+const path = require('path');
+const raw = JSON.parse(fs.readFileSync(path.join(__dirname, 'rs485_items.json'), 'utf8'));
+
+// 紧凑数据
+const compact = raw.items
+  .filter(i => i.name && i.off != null)
+  .map(i => {
+    const o = { s: i.sys, n: i.name, o: i.off, f: i.fmt };
+    if (i.unit) o.u = i.unit;
+    if (i.script) {
+      if (i.script.kind === 'value') { o.k = 'v'; o.e = i.script.expr; o.a = i.script.args; }
+      else { o.k = 's'; o.j = i.script.js; o.a = i.script.args; }
+    }
+    return o;
+  });
+
+const VIN_FRAMES = [
+  "434689402B22100C050F12501330001E0000006000001000CC6440750E00000000000080000000000000009000000000000000A000CC0000000000B0CCCCCCCC000000C0884544",
+  "4346714000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000B54544",
+  "4346804000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000C04544"
+];
+
+// CAN 直连预设（ABS 排气，命令来自官方诊断库 模块010/099 的 [SPEFUNC]）
+const CAN_PRESETS = {
+  abs: [
+    ['进入扩展会话', '1003'],
+    ['泵 开', '2FE0DA0301'],
+    ['泵 关', '2FE0DA0300'],
+    ['阀 开(前轮组)', '2FE0DB03000064640000FC'],
+    ['阀 全关', '2FE0DB03000000000000FC'],
+    ['读轮速(31 03 B071)', '3103B071'],
+    ['清故障码', '14FFFFFF'],
+    ['退会话', '1001'],
+    ['ECU 复位', '1101']
+  ]
+};
+
+// RS485 特殊功能（模块 016 [SPEFUNC] 完整帧，校验已验证）
+const SPE_RS485 = {
+  initMsgs: [
+    "4346894015000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FE4544",
+    "4346714000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000D14544",
+    "4346714000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000F14544"
+  ],
+  tpmsInitMsgs: [
+    "4346894015000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000FE4544",
+    "4346714000000000000024000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000D54544",
+    "4346714000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000F14544"
+  ],
+  tpmsFrame: "434617023808594544",
+  nfcTip: "NFC 学卡/删卡为短命令（官方码：学卡 3900→0D0100→放卡→0D0103；删卡 3A00→0D010103），成帧方式需实车实测；可先用\"自定义帧\"或原始帧输入框发送实验。"
+};
+
+const DATA_JS = 'var SYS=' + JSON.stringify({ "49": "计量器/BMS", "51": "BMS 电池", "59": "MCU 电机", "81": "仪表/整车", "89": "TBOX/配置", "8B": "后雷达" }) + ';\n'
+  + 'var ITEMS=' + JSON.stringify(compact) + ';\n'
+  + 'var VIN_FRAMES=' + JSON.stringify(VIN_FRAMES) + ';\n'
+  + 'var CAN_PRESETS=' + JSON.stringify(CAN_PRESETS) + ';\n'
+  + 'var SPE_RS485=' + JSON.stringify(SPE_RS485) + ';';
+
+const LOGIC_JS = `
+// ============ 原生桥 ============
+var r485 = window.r485 || function (cmd, data, cb) {
+  var id = 'r485_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+  window.__r485Cbs = window.__r485Cbs || {};
+  if (cb) window.__r485Cbs[id] = cb;
+  if (!window.webkit || !window.webkit.messageHandlers.rs485) { if (cb) cb(null); return; }
+  window.webkit.messageHandlers.rs485.postMessage({ command: cmd, data: data || '', id: id });
+};
+
+// ============ 状态 ============
+var devices = {};
+var connected = false;
+var buffers = [];   // 最近响应 {hex, ts}
+var MAXBUF = 30;
+
+function $(id) { return document.getElementById(id); }
+function logLine(dir, hex, extra) {
+  var el = $('log');
+  var t = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  var ascii = '';
+  if ($('chkAscii').checked) {
+    ascii = '  |' + hexToAscii(hex) + '|';
+  }
+  var color = dir === 'TX' ? '#2f9de0' : (dir === 'RX' ? '#35c46f' : '#8296a8');
+  var div = document.createElement('div');
+  div.style.color = color;
+  div.textContent = '[' + t + '] ' + dir + ' ' + hex + ascii + (extra ? '  ' + extra : '');
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+  if (el.childNodes.length > 400) el.removeChild(el.firstChild);
+}
+function hexToAscii(hex) {
+  var s = '';
+  for (var i = 0; i + 1 < hex.length; i += 2) {
+    var c = parseInt(hex.substr(i, 2), 16);
+    s += (c >= 32 && c < 127) ? String.fromCharCode(c) : '.';
+  }
+  return s;
+}
+function hex2bytes(hex) {
+  var a = [];
+  for (var i = 0; i + 1 < hex.length; i += 2) a.push(parseInt(hex.substr(i, 2), 16));
+  return a;
+}
+function bytes2hex(a) {
+  var s = '';
+  for (var i = 0; i < a.length; i++) s += (a[i] < 16 ? '0' : '') + a[i].toString(16);
+  return s.toUpperCase();
+}
+
+// ============ BLE 事件 ============
+window.onR485Event = function (json) {
+  var ev; try { ev = JSON.parse(json); } catch (e) { return; }
+  if (ev.type === 'state') {
+    var pill = $('blePill');
+    var m = { poweredOn: '蓝牙已就绪', poweredOff: '蓝牙未开启', unauthorized: '无蓝牙权限', unsupported: '不支持蓝牙' };
+    pill.textContent = m[ev.state] || ('蓝牙 ' + ev.state);
+    pill.className = 'pill ' + (ev.state === 'poweredOn' ? 'ok' : 'err');
+  } else if (ev.type === 'device') {
+    devices[ev.id] = ev;
+    renderDevices();
+  } else if (ev.type === 'connected') {
+    connected = true;
+    var nm = (ev.name || '').toUpperCase();
+    linkMode = (nm.indexOf('CAN') >= 0 || nm.indexOf('ESP32') >= 0) ? 'can' : 'rs485';
+    applyMode();
+    $('blePill').textContent = '已连接' + (ev.name ? ' ' + ev.name : '') + '（' + (linkMode === 'can' ? 'CAN' : 'RS485') + '）';
+    $('blePill').className = 'pill ok';
+    logLine('SYS', '已连接 ' + (ev.name || '') + '，链路模式：' + (linkMode === 'can' ? 'CAN' : 'RS485'));
+  } else if (ev.type === 'ready') {
+    $('svcInfo').textContent = ev.ok ? ('写: ' + ev.write + '  通知: ' + ev.notify) : '未找到可写/通知特征';
+    $('svcInfo').className = 'hint ' + (ev.ok ? '' : 'err');
+  } else if (ev.type === 'services') {
+    var txt = (ev.list || []).map(function (s) { return s.uuid + '(' + (s.chars || []).length + ')'; }).join('  ');
+    $('svcInfo').textContent = '服务: ' + txt;
+  } else if (ev.type === 'data') {
+    buffers.unshift({ hex: ev.hex, ts: Date.now() });
+    if (buffers.length > MAXBUF) buffers.pop();
+    if (linkMode === 'can') { canOnData(ev.hex); }
+    else { logLine('RX', ev.hex, '(' + ev.len + 'B)'); autoParse(ev.hex); }
+  } else if (ev.type === 'tx') {
+    // 发送回显已在 sendFrame 记过，这里略
+  } else if (ev.type === 'disconnected') {
+    connected = false;
+    $('blePill').textContent = '已断开';
+    $('blePill').className = 'pill err';
+    logLine('SYS', 'disconnected ' + (ev.error || ''));
+  } else if (ev.type === 'error') {
+    logLine('SYS', 'ERROR: ' + ev.error);
+  } else if (ev.type === 'notifyState') {
+    logLine('SYS', '通知订阅 ' + ev.uuid.slice(0, 8) + ' = ' + ev.on);
+  }
+};
+
+function renderDevices() {
+  var box = $('devList');
+  box.innerHTML = '';
+  var arr = Object.values(devices).sort(function (a, b) { return b.rssi - a.rssi; });
+  arr.forEach(function (d) {
+    var el = document.createElement('div');
+    el.className = 'dev';
+    el.innerHTML = '<span class="nm">' + (d.name || '(未命名)') + '</span><span class="rs">' + d.rssi + ' dBm</span>';
+    el.onclick = function () {
+      r485('connect', d.id, null);
+      el.className = 'dev sel';
+    };
+    box.appendChild(el);
+  });
+}
+
+// ============ 按钮 ============
+$('btnBack').onclick = function () { r485('openPanel', '', null); };
+$('btnScan').onclick = function () { devices = {}; renderDevices(); r485('scan', $('flt').value.trim(), null); };
+$('btnStop').onclick = function () { r485('stopScan', '', null); };
+$('btnDis').onclick = function () { r485('disconnect', '', null); };
+
+$('btnBuild').onclick = function () {
+  var sys = $('sysSel').value.trim().toUpperCase();
+  var payload = $('payload').value.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+  if (!/^[0-9A-F]{2}$/.test(sys)) { logLine('SYS', '系统码需为 2 位十六进制'); return; }
+  $('frame').value = buildFrame(sys, payload);
+};
+function buildFrame(sysHex, payloadHex) {
+  var body = sysHex + '40' + payloadHex;
+  var bytes = hex2bytes(body);
+  var ck = 0;
+  for (var i = 0; i < bytes.length; i++) ck = (ck + bytes[i]) & 0xFF;
+  return '4346' + body + bytes2hex([ck]) + '4544';
+}
+$('btnSend').onclick = function () {
+  var hex = $('frame').value.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+  if (!hex) { logLine('SYS', '无帧可发'); return; }
+  sendFrame(hex);
+};
+function sendFrame(hex) {
+  r485('send', hex, function (res) {
+    if (res && res.ok) logLine('TX', hex, '(' + (hex.length / 2) + 'B)');
+    else logLine('SYS', '发送失败（未连接？）');
+  });
+}
+
+// 预置：读 VIN 三步
+$('btnVin').onclick = function () {
+  var i = 0;
+  function next() {
+    if (i >= VIN_FRAMES.length) { logLine('SYS', 'VIN 三步帧已发完，等待响应…'); return; }
+    sendFrame(VIN_FRAMES[i]);
+    i++;
+    setTimeout(next, 400);
+  }
+  next();
+};
+// 数据类别 chip：一键生成读取帧并发送（自动解析）
+Array.prototype.forEach.call(document.querySelectorAll('[data-sys]'), function (btn) {
+  btn.onclick = function () {
+    var sys = btn.getAttribute('data-sys');
+    $('sysSel').value = sys;
+    $('payload').value = '';
+    $('btnBuild').onclick();
+    $('pSys').value = sys;
+    renderItems(sys);
+    sendFrame($('frame').value);
+    var st = $('dataStatus');
+    if (st) st.textContent = '已发送读取命令（' + sys + ' ' + (SYS[sys] || '') + '），等待响应自动解析…';
+  };
+});
+
+// ============ CAN 直连（ESP32 ZEEHO-CAN；BLE 帧格式: ID_H ID_L DLC D0..D7） ============
+var linkMode = 'rs485';
+var lastCanReqId = 0;
+var canMulti = null;
+var absFlowAbort = false;
+
+function applyMode() {
+  // 已改为分页结构；此处仅同步链路模式选择器
+  var sel = document.getElementById('linkSel');
+  if (sel) sel.value = linkMode;
+}
+
+// UDS -> ISO-TP 帧序列（每个 8 字节数据场 hex；>7 字节自动 FF+CF 多帧）
+function isotpFrames(udsHex) {
+  var b = hex2bytes(udsHex);
+  if (!b.length || b.length > 4095) return [];
+  if (b.length <= 7) {
+    var d = [b.length].concat(b);
+    while (d.length < 8) d.push(0);
+    return [bytes2hex(d)];
+  }
+  var out = [];
+  var ff = [0x10 | ((b.length >> 8) & 0x0F), b.length & 0xFF].concat(b.slice(0, 6));
+  out.push(bytes2hex(ff));
+  var idx = 6, seq = 1;
+  while (idx < b.length) {
+    var cf = [0x20 | (seq & 0x0F)].concat(b.slice(idx, idx + 7));
+    while (cf.length < 8) cf.push(0);
+    out.push(bytes2hex(cf));
+    idx += 7; seq++;
+  }
+  return out;
+}
+
+function canFrameHex(id, data8hex) {
+  var s = id.toString(16).toUpperCase();
+  while (s.length < 4) s = '0' + s;
+  return s + '08' + data8hex;
+}
+
+function canSend(id, udsHex, label) {
+  var frames = isotpFrames(udsHex);
+  if (!frames.length) { logLine('SYS', 'CAN: UDS 无效'); return; }
+  lastCanReqId = id;
+  frames.forEach(function (f8, i) {
+    setTimeout(function () {
+      var frame = canFrameHex(id, f8);
+      r485('send', frame, function (res) {
+        if (res && res.ok) logLine('TX', frame, label ? ('[' + label + ']') : '');
+        else logLine('SYS', '发送失败（未连接？）');
+      });
+    }, i * 30);
+  });
+}
+
+var NRC_TEXT = { 0x10: '通用拒绝', 0x11: '服务不支持', 0x12: '子功能不支持', 0x13: '长度错误', 0x22: '条件不满足', 0x31: '请求超出范围', 0x33: '安全拒绝(需先解锁)', 0x35: '无效密钥', 0x78: '响应挂起' };
+
+function canUdsDecode(udsHex) {
+  var b = hex2bytes(udsHex);
+  var svc = b[0];
+  var txt = '';
+  if (svc === 0x7F) {
+    txt = '负响应: 服务 ' + bytes2hex([b[1] || 0]) + '  NRC ' + (b[2] || 0).toString(16).toUpperCase() + ' ' + (NRC_TEXT[b[2]] || '');
+  } else if (svc === 0x6F) {
+    txt = '写 DID ' + bytes2hex([b[1], b[2]]) + ' 成功';
+  } else if (svc === 0x62) {
+    txt = '读 DID ' + bytes2hex([b[1], b[2]]) + ' = ' + bytes2hex(b.slice(3));
+  } else if (svc === 0x50) {
+    txt = '会话变更成功';
+  } else if (svc === 0x54) {
+    txt = '清码成功';
+  } else if (svc === 0x71) {
+    txt = '例程控制响应 ' + bytes2hex(b.slice(1));
+  } else {
+    txt = 'UDS 响应: ' + udsHex;
+  }
+  logLine('UDS', txt);
+  var outs = document.querySelectorAll('.udsout');
+  var t = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  for (var oi = 0; oi < outs.length; oi++) {
+    outs[oi].textContent += '[' + t + '] ' + txt + '\\n';
+    outs[oi].scrollTop = outs[oi].scrollHeight;
+  }
+  if (svc === 0x7F && b[2] === 0x33) logLine('SYS', '提示：被测 ECU 要求安全访问（27 01/27 02），需先解锁——把此处日志发我继续逆密钥算法');
+}
+
+function canOnData(hex) {
+  if (hex.length < 6) return;
+  var b = hex2bytes(hex);
+  var id = (b[0] << 8) | b[1];
+  var dlc = b[2] || 0;
+  var data = b.slice(3, 3 + Math.min(dlc, 8));
+  var dhex = bytes2hex(data);
+  logLine('RX', 'ID ' + id.toString(16).toUpperCase() + '  ' + dhex, 'CAN');
+  var pci = data[0] || 0;
+  if ((pci & 0xF0) === 0x00) {
+    canUdsDecode(bytes2hex(data.slice(1, 1 + (pci & 0x0F))));
+    canMulti = null;
+  } else if ((pci & 0xF0) === 0x10) {
+    canMulti = { total: ((pci & 0x0F) << 8) | (data[1] || 0), buf: data.slice(2) };
+    r485('send', canFrameHex(lastCanReqId, '3008140000000000'), null); // 流控 BS=8 STmin=20ms
+  } else if ((pci & 0xF0) === 0x20 && canMulti) {
+    canMulti.buf = canMulti.buf.concat(data.slice(1));
+    if (canMulti.buf.length >= canMulti.total) {
+      canUdsDecode(bytes2hex(canMulti.buf.slice(0, canMulti.total)));
+      canMulti = null;
+    }
+  }
+}
+
+// 一键前轮/后轮排气流程（官方 [06]/[07] 序列 + 10 秒泵循环）
+function absFlow() {
+  var id = parseInt(document.getElementById('canIdSel').value, 16);
+  var statusEl = document.getElementById('absStatus');
+  function st(t) { if (statusEl) statusEl.textContent = t; logLine('SYS', t); }
+  absFlowAbort = false;
+  var seq = [
+    ['进入扩展会话', '1003', 400],
+    ['开前轮阀', '2FE0DB03000064640000FC', 500],
+    ['开 ABS 泵', '2FE0DA0301', 400],
+    ['__WAIT__', '', 0],
+    ['关 ABS 泵', '2FE0DA0300', 300],
+    ['关阀', '2FE0DB03000000000000FC', 300],
+    ['清除故障码', '14FFFFFF', 300],
+    ['退出会话', '1001', 200]
+  ];
+  var total = 8;
+  var i = 0;
+  st('开始一键排气（共 ' + total + ' 步）…请配合放气螺丝操作');
+  function step() {
+    if (absFlowAbort) { st('已停止（泵/阀保持当前状态，可到「手动控制」补发：关泵 / 关阀）'); absFlowAbort = false; return; }
+    if (i >= seq.length) { st('✅ 排气流程完成：关闭放气螺丝 → 补足刹车油 → 低速路试刹车'); return; }
+    var s = seq[i];
+    i++;
+    if (s[0] === '__WAIT__') {
+      st('第 ' + i + '/' + total + ' 步：泵运行中 10 秒（可继续放气；可点「停止」）');
+      setTimeout(step, 10000);
+      return;
+    }
+    st('第 ' + i + '/' + total + ' 步：' + s[0]);
+    canSend(id, s[1], s[0]);
+    setTimeout(step, s[2]);
+  }
+  step();
+}
+
+// CAN 模式 UI 事件绑定
+(function bindCanUI() {
+  var linkSel = document.getElementById('linkSel');
+  if (linkSel) linkSel.onchange = function () { linkMode = linkSel.value; applyMode(); };
+  var btnSend = document.getElementById('btnCanSend');
+  if (btnSend) btnSend.onclick = function () {
+    var id = parseInt(document.getElementById('canIdSel').value, 16);
+    var uds = document.getElementById('canUds').value.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+    if (uds) canSend(id, uds, '手动');
+  };
+  var btnFlow = document.getElementById('btnAbsFlow');
+  if (btnFlow) btnFlow.onclick = absFlow;
+  var btnStop = document.getElementById('btnAbsStop');
+  if (btnStop) btnStop.onclick = function () { absFlowAbort = true; };
+  var panel = document.getElementById('absPanel');
+  if (panel) {
+    CAN_PRESETS.abs.forEach(function (it) {
+      var b = document.createElement('button');
+      b.className = 'ghost';
+      b.textContent = it[0];
+      b.onclick = function () {
+        var id = parseInt(document.getElementById('canIdSel').value, 16);
+        canSend(id, it[1], it[0]);
+      };
+      panel.appendChild(b);
+    });
+  }
+})();
+
+// RS485 特殊功能 + CAN 胎压匹配 UI 绑定
+(function bindSpeUI() {
+  function rs485SpeSeq(frames, label) {
+    frames.forEach(function (f, i) {
+      setTimeout(function () { sendFrame(f); }, i * 450);
+    });
+    logLine('SYS', '特殊功能序列发送（' + frames.length + ' 帧）：' + label);
+  }
+  var b = document.getElementById('btnSpeInit');
+  if (b) b.onclick = function () { rs485SpeSeq(SPE_RS485.initMsgs, '初始化 Cmd01/02/03'); };
+  var bt = document.getElementById('btnSpeTpms');
+  if (bt) bt.onclick = function () {
+    if (!confirm('胎压匹配为写操作，确认车辆已安全停放、且已完成传感器更换？')) return;
+    rs485SpeSeq(SPE_RS485.tpmsInitMsgs, '胎压匹配-初始化');
+    setTimeout(function () {
+      sendFrame(SPE_RS485.tpmsFrame);
+      logLine('SYS', '胎压匹配帧（4346 17 02 3808…）已发送');
+    }, 1500);
+  };
+  var tip = document.getElementById('speTip');
+  if (tip) tip.textContent = SPE_RS485.nfcTip;
+
+  // CAN 胎压传感器匹配（目标 0x714，库模块 086/093）
+  var c = document.getElementById('btnTpmsRead');
+  if (c) c.onclick = function () { canSend(0x714, '220802', '读胎压传感器ID'); };
+  var f1 = document.getElementById('btnTpmsFront');
+  if (f1) f1.onclick = function () {
+    canSend(0x714, '31015390', '前轮匹配-启动');
+    setTimeout(function () { canSend(0x714, '31035390', '前轮匹配-查结果'); }, 3000);
+  };
+  var f2 = document.getElementById('btnTpmsRear');
+  if (f2) f2.onclick = function () {
+    canSend(0x714, '31015391', '后轮匹配-启动');
+    setTimeout(function () { canSend(0x714, '31035391', '后轮匹配-查结果'); }, 3000);
+  };
+  var f3 = document.getElementById('btnTpmsStop');
+  if (f3) f3.onclick = function () {
+    canSend(0x714, '31025390', '停止例程5390');
+    setTimeout(function () { canSend(0x714, '31025391', '停止例程5391'); }, 150);
+  };
+})();
+
+// ============ 分页导航 / 一键连接 / NFC ============
+function showPage(name) {
+  var pages = document.querySelectorAll('.page');
+  for (var i = 0; i < pages.length; i++) pages[i].hidden = (pages[i].id !== 'page-' + name);
+  window.scrollTo(0, 0);
+}
+Array.prototype.forEach.call(document.querySelectorAll('[data-nav]'), function (el) {
+  el.onclick = function () { showPage(el.getAttribute('data-nav')); };
+});
+
+var autoTimer = null;
+function autoConnect() {
+  devices = {}; renderDevices();
+  r485('scan', '', null);
+  logLine('SYS', '一键连接：搜索中（3 秒）…');
+  var st = $('svcInfo');
+  if (st) { st.textContent = '搜索中（3 秒）…'; st.className = 'hint'; }
+  if (autoTimer) clearTimeout(autoTimer);
+  autoTimer = setTimeout(function () {
+    r485('stopScan', '', null);
+    var arr = Object.values(devices);
+    var pick = null;
+    for (var i = 0; i < arr.length; i++) {
+      var n = (arr[i].name || '').toUpperCase();
+      if (n.indexOf('ZEEHO-CAN') >= 0 || n.indexOf('6328') >= 0) { pick = arr[i]; break; }
+    }
+    if (!pick && arr.length) pick = arr.slice().sort(function (a, b) { return b.rssi - a.rssi; })[0];
+    if (pick) {
+      r485('connect', pick.id, null);
+      logLine('SYS', '选中设备：' + (pick.name || pick.id));
+      if (st) st.textContent = '正在连接 ' + (pick.name || '') + ' …';
+    } else {
+      logLine('SYS', '未发现设备：确认模块已上电，或用「扫描设备列表」手动连接');
+      if (st) st.textContent = '未发现设备，点「扫描设备列表」重试';
+    }
+  }, 3500);
+}
+var ba = $('btnAuto'); if (ba) ba.onclick = autoConnect;
+
+function speSendFrames(frames, label) {
+  frames.forEach(function (f, i) { setTimeout(function () { sendFrame(f); }, i * 450); });
+  logLine('SYS', '特殊功能序列发送（' + frames.length + ' 帧）：' + label);
+}
+var bn = $('btnNfcInit');
+if (bn) bn.onclick = function () {
+  speSendFrames(SPE_RS485.initMsgs, 'NFC 初始化');
+  var st = $('nfcStatus'); if (st) st.textContent = '已发送初始化序列。接下来可发送学卡命令（3900）…';
+};
+var bc = $('btnNfcCmd');
+if (bc) bc.onclick = function () {
+  var v = ($('nfcRaw').value || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+  if (!v) return;
+  sendFrame(v);
+  var st = $('nfcStatus'); if (st) st.textContent = '已发送命令 ' + v + '，观察下方响应（如无响应说明成帧方式需实车调整）。';
+};
+
+// ============ 数据流解析 ============
+function evalItem(it, buf, base) {
+  var off = it.o;
+  if (off == null) return null;
+  var args = [];
+  var n = (it.a && it.a.length) || 1;
+  for (var k = 0; k < n; k++) args.push(buf[base + off + k] != null ? buf[base + off + k] : 0);
+  try {
+    if (it.k === 'v') {
+      var fn = new Function((it.a || []).join(','), 'return (' + it.e + ');');
+      var v = fn.apply(null, args);
+      return v;
+    } else {
+      var fn2 = new Function((it.a || []).join(','), it.j);
+      return fn2.apply(null, args);
+    }
+  } catch (e) { return null; }
+}
+
+// 从响应 buffer 中找 sys+40 标记，返回标记起始下标（搜索从第 2 字节开始，跳过帧头 4346）
+function findMarker(buf, sysHex) {
+  var sys = parseInt(sysHex, 16);
+  for (var i = 0; i + 1 < buf.length; i++) {
+    if (buf[i] === sys && buf[i + 1] === 0x40) return i;
+  }
+  return -1;
+}
+
+var lastParsed = {};   // sys -> {name: value}
+function parseBuffer(hex, sysHex) {
+  var buf = hex2bytes(hex);
+  var base = findMarker(buf, sysHex);
+  if (base < 0) return null;
+  var out = {};
+  ITEMS.forEach(function (it) {
+    if (it.s !== sysHex) return;
+    out[it.n] = { v: evalItem(it, buf, base), u: it.u || '', f: it.f || '' };
+  });
+  return out;
+}
+
+function autoParse(hex) {
+  // 对每个已知系统尝试解析，命中标记数量最多的系统
+  var best = null, bestCount = 0;
+  Object.keys(SYS).forEach(function (sys) {
+    var buf = hex2bytes(hex);
+    var base = findMarker(buf, sys);
+    if (base < 0) return;
+    var cnt = ITEMS.filter(function (i) { return i.s === sys; }).length;
+    if (cnt > bestCount) { best = sys; bestCount = cnt; }
+  });
+  if (best) {
+    $('pSys').value = best;
+    var r = parseBuffer(hex, best);
+    if (r) {
+      lastParsed = r;
+      renderItems(best, r);
+      var dst = $('dataStatus');
+      if (dst) dst.textContent = '已解析：' + best + ' ' + (SYS[best] || '') + ' · ' + Object.keys(r).length + ' 项数据';
+      logLine('SYS', '已按系统 ' + best + ' 解析 ' + Object.keys(r).length + ' 项');
+    }
+  } else {
+    // VIN 尝试
+    var ascii = hexToAscii(hex).replace(/\\./g, '');
+    var m = hexToAscii(hex).match(/[A-HJ-NPR-Z0-9]{17}/);
+    if (m) logLine('SYS', '发现疑似 VIN: ' + m[0]);
+  }
+}
+
+function renderItems(sysHex, parsed) {
+  var grid = $('dsGrid');
+  grid.innerHTML = '';
+  var list = ITEMS.filter(function (i) { return i.s === sysHex; });
+  if (!list.length) { grid.innerHTML = '<div class="hint">该系统暂无内置解析项</div>'; return; }
+  list.forEach(function (it) {
+    var entry = parsed ? parsed[it.n] : (lastParsed[it.n] != null ? lastParsed[it.n] : null);
+    var val = entry && entry.v != null && entry.v !== undefined ? entry.v : null;
+    if (typeof val === 'number') {
+      val = (it.f && it.f.indexOf('.') >= 0) ? Number(val).toFixed(1) : Math.round(val);
+    }
+    var el = document.createElement('div');
+    el.className = 'ds' + (val === null ? ' fail' : '');
+    el.innerHTML = '<div class="n">' + it.n + '</div><div class="v">' + (val === null ? '—' : val) + '<small>' + (it.u || '') + '</small></div>';
+    grid.appendChild(el);
+  });
+}
+
+$('pSys').onchange = function () { renderItems($('pSys').value); };
+$('btnParse').onclick = function () {
+  if (!buffers.length) { logLine('SYS', '暂无响应数据'); return; }
+  var sys = $('pSys').value;
+  for (var i = 0; i < buffers.length; i++) {
+    var r = parseBuffer(buffers[i].hex, sys);
+    if (r) { lastParsed = r; renderItems(sys, r); logLine('SYS', '解析系统 ' + sys + '（' + r && Object.keys(r).length + ' 项）来自最近响应#' + (i + 1)); return; }
+  }
+  logLine('SYS', '未在最近 ' + buffers.length + ' 条响应中找到系统 ' + sys + ' 的标记（' + sys + '40）');
+};
+
+$('btnClr').onclick = function () { $('log').innerHTML = ''; buffers = []; };
+
+// 初始化
+Object.keys(SYS).forEach(function (s) {
+  var opt = document.createElement('option');
+  opt.value = s; opt.textContent = s + ' ' + SYS[s];
+  $('pSys').appendChild(opt);
+});
+if (Object.keys(SYS).indexOf('51') >= 0) $('pSys').value = '51';
+renderItems($('pSys').value);
+applyMode();
+showPage('home');
+logLine('SYS', '无线诊断已就绪：先「一键连接」，再选择需要的功能');
+`;
+
+// 校验 JS 语法
+try {
+  new Function('window', 'document', LOGIC_JS);
+  new Function('var x=' + JSON.stringify(compact) + ';');
+} catch (e) {
+  console.error('JS 语法错误: ' + e.message);
+  process.exit(1);
+}
+
+const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"/>
+<title>RS485 无线诊断</title>
+<style>
+:root{--bg:#0a0f18;--panel:#141b26;--panel2:#1b2430;--border:#2a3644;--text:#dce6ef;--muted:#8296a8;--ok:#35c46f;--acc:#2f9de0;--err:#e05a4e;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,"PingFang SC",system-ui,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);}
+header{display:flex;align-items:center;gap:10px;padding:12px 14px;position:sticky;top:0;background:rgba(10,15,24,.92);backdrop-filter:blur(8px);z-index:9;border-bottom:1px solid var(--border);}
+header h1{font-size:16px;font-weight:600;flex:1;}
+button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:13px;min-height:36px;}
+button.ghost{background:var(--panel2);border:1px solid var(--border);color:var(--text);}
+button.green{background:var(--ok);}
+.pill{padding:3px 10px;border-radius:999px;font-size:12px;background:var(--panel2);border:1px solid var(--border);color:var(--muted);white-space:nowrap;}
+.pill.ok{color:var(--ok);border-color:var(--ok);}
+.pill.err{color:var(--err);border-color:var(--err);}
+main{padding:12px 14px;display:flex;flex-direction:column;gap:12px;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.card h2{font-size:13px;margin-bottom:8px;color:var(--text);}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;}
+input,select{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;outline:none;min-height:36px;}
+input{flex:1;min-width:110px;}
+.hint{color:var(--muted);font-size:12px;margin-top:6px;word-break:break-all;}
+.hint.err{color:var(--err);}
+.devlist{margin-top:8px;display:flex;flex-direction:column;gap:6px;max-height:200px;overflow:auto;}
+.dev{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;display:flex;gap:8px;align-items:center;}
+.dev.sel{border-color:var(--ok);}
+.dev .rs{margin-left:auto;color:var(--muted);font-size:12px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46%,1fr));gap:8px;margin-top:8px;max-height:400px;overflow:auto;}
+.ds{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;}
+.ds .n{color:var(--muted);font-size:12px;}
+.ds .v{font-size:17px;font-family:ui-monospace,Menlo,Consolas,monospace;margin-top:2px;}
+.ds .v small{font-size:11px;color:var(--muted);margin-left:3px;}
+.ds.fail{opacity:.4;}
+.log{background:#080c12;border:1px solid var(--border);border-radius:8px;padding:8px;height:200px;overflow:auto;font:11px/1.65 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;}
+.presets button{padding:6px 10px;font-size:12px;}
+label.hint{display:inline-flex;align-items:center;gap:4px;}
+.page[hidden]{display:none;}
+.back{margin-bottom:6px;min-height:32px;padding:6px 12px;}
+.pageh{font-size:17px;font-weight:600;margin:0 0 10px;}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.tile{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px 12px;cursor:pointer;}
+.tile:active{border-color:var(--ok);}
+.tile .tico{font-size:22px;}
+.tile .tt{font-size:15px;font-weight:600;margin-top:4px;}
+.tile .ts{font-size:11px;color:var(--muted);margin-top:2px;}
+button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:8px;}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.chip{background:var(--panel2);border:1px solid var(--border);border-radius:999px;padding:9px 14px;font-size:13px;color:var(--text);}
+.chip:active{border-color:var(--ok);}
+.status{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;margin-top:8px;}
+.udsout{height:110px;margin-top:6px;}
+</style>
+</head>
+<body>
+<header>
+  <button id="btnBack" class="ghost">‹ 面板</button>
+  <h1>无线诊断</h1>
+  <span id="blePill" class="pill">蓝牙未知</span>
+</header>
+<main>
+
+  <!-- ===== 首页 ===== -->
+  <div class="page" id="page-home">
+    <section class="card">
+      <h2>连接设备</h2>
+      <button id="btnAuto" class="big green">一键连接（自动搜索 3 秒）</button>
+      <div class="row">
+        <button id="btnScan" class="ghost">扫描设备列表</button>
+        <button id="btnDis" class="ghost">断开</button>
+        <button id="btnStop" class="ghost">停止扫描</button>
+        <input id="flt" placeholder="名称过滤" style="display:none"/>
+      </div>
+      <div id="devList" class="devlist"></div>
+      <div id="svcInfo" class="hint">未连接</div>
+    </section>
+    <div class="tiles">
+      <div class="tile" data-nav="data"><div class="tico">📊</div><div class="tt">看数据流</div><div class="ts">电池 / 电机 / 仪表</div></div>
+      <div class="tile" data-nav="abs"><div class="tico">🛑</div><div class="tt">ABS 排气</div><div class="ts">换刹车油、排空气</div></div>
+      <div class="tile" data-nav="tpms"><div class="tico">🛞</div><div class="tt">胎压传感器</div><div class="ts">匹配 / 读 ID</div></div>
+      <div class="tile" data-nav="nfc"><div class="tico">🔑</div><div class="tt">NFC 卡</div><div class="ts">学卡 / 删卡</div></div>
+      <div class="tile" data-nav="more"><div class="tico">🧰</div><div class="tt">更多功能</div><div class="ts">初始化 / 整车</div></div>
+      <div class="tile" data-nav="adv"><div class="tico">⚙️</div><div class="tt">高级工具</div><div class="ts">原始帧 / 日志</div></div>
+    </div>
+  </div>
+
+  <!-- ===== 看数据流 ===== -->
+  <div class="page" id="page-data" hidden>
+    <button class="back ghost" data-nav="home">‹ 返回</button>
+    <h2 class="pageh">看数据流</h2>
+    <section class="card">
+      <h2>选一类数据，点一下自动读取</h2>
+      <div class="chips">
+        <button class="chip" data-sys="51">🔋 电池</button>
+        <button class="chip" data-sys="59">⚡ 电机</button>
+        <button class="chip" data-sys="81">🧭 仪表整车</button>
+        <button class="chip" data-sys="49">📟 计量器</button>
+        <button class="chip" data-sys="89">📡 TBOX</button>
+        <button class="chip" data-sys="8B">📶 后雷达</button>
+        <button class="chip" id="btnVin">🔍 读 VIN</button>
+      </div>
+      <div class="status" id="dataStatus">选择后自动发送读取命令并解析；若数值大多显示"—"，到「高级工具」调整读取帧后再试。</div>
+      <div id="dsGrid" class="grid"></div>
+      <div class="row">
+        <select id="pSys" style="display:none"></select>
+        <button id="btnParse" class="ghost">重新解析最近响应</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== ABS 排气 ===== -->
+  <div class="page" id="page-abs" hidden>
+    <button class="back ghost" data-nav="home">‹ 返回</button>
+    <h2 class="pageh">ABS 排气</h2>
+    <section class="card">
+      <div class="status" id="absStatus">尚未开始。排气时请配合放气螺丝按维修流程操作。</div>
+      <div class="row">
+        <select id="canIdSel">
+          <option value="7E1">ABS 控制器（0x7E1）</option>
+          <option value="714">ABS 控制器（0x714）</option>
+        </select>
+      </div>
+      <button id="btnAbsFlow" class="big green">▶ 开始一键排气（泵循环 10 秒）</button>
+      <div class="row"><button id="btnAbsStop" class="ghost">停止</button></div>
+      <div class="hint">流程：进入会话 → 开前轮阀 → 开泵（10 秒）→ 关泵 → 关阀 → 清码 → 退会话。结束后务必关闭放气螺丝、补足刹车油并低速路试刹车。</div>
+    </section>
+    <section class="card">
+      <h2>手动控制（泵 / 阀 / 清码）</h2>
+      <div class="row presets" id="absPanel"></div>
+    </section>
+    <section class="card">
+      <h2>响应</h2>
+      <div class="log udsout"></div>
+    </section>
+  </div>
+
+  <!-- ===== 胎压传感器 ===== -->
+  <div class="page" id="page-tpms" hidden>
+    <button class="back ghost" data-nav="home">‹ 返回</button>
+    <h2 class="pageh">胎压传感器</h2>
+    <section class="card">
+      <div class="row"><button id="btnTpmsRead" class="ghost">读取传感器 ID</button></div>
+      <button id="btnTpmsFront" class="big">前轮：开始匹配</button>
+      <button id="btnTpmsRear" class="big">后轮：开始匹配</button>
+      <div class="row"><button id="btnTpmsStop" class="ghost">停止例程（异常时）</button></div>
+      <div class="hint">更换胎压传感器后执行：点「开始匹配」→ 保持传感器处于激活状态 → 3 秒后自动查询结果。</div>
+    </section>
+    <section class="card">
+      <h2>匹配结果</h2>
+      <div class="log udsout"></div>
+    </section>
+  </div>
+
+  <!-- ===== NFC 卡 ===== -->
+  <div class="page" id="page-nfc" hidden>
+    <button class="back ghost" data-nav="home">‹ 返回</button>
+    <h2 class="pageh">NFC 钥匙卡</h2>
+    <section class="card">
+      <h2>操作</h2>
+      <div class="row">
+        <button id="btnNfcInit" class="ghost">① 初始化</button>
+        <button id="btnNfcCmd" class="green">② 发送操作命令</button>
+      </div>
+      <input id="nfcRaw" placeholder="操作命令（默认学卡码 3900）" value="3900"/>
+      <div class="status" id="nfcStatus">流程：先点「初始化」，再发学卡命令 3900 → 0D0100 →（把新卡贴近车）→ 0D0103。删卡用 3A00 → 0D010103（会删除全部原厂卡）。短命令成帧待实车验证，若无响应属正常。</div>
+    </section>
+    <section class="card">
+      <h2>响应</h2>
+      <div class="log udsout"></div>
+    </section>
+  </div>
+
+  <!-- ===== 更多功能 ===== -->
+  <div class="page" id="page-more" hidden>
+    <button class="back ghost" data-nav="home">‹ 返回</button>
+    <h2 class="pageh">更多功能</h2>
+    <section class="card">
+      <h2>RS485（I6328A 模块）</h2>
+      <div class="row">
+        <button id="btnSpeInit" class="ghost">初始化（Cmd01/02/03）</button>
+        <button id="btnSpeTpms">胎压匹配（RS485 通道）</button>
+      </div>
+      <div class="hint" id="speTip"></div>
+    </section>
+  </div>
+
+  <!-- ===== 高级工具 ===== -->
+  <div class="page" id="page-adv" hidden>
+    <button class="back ghost" data-nav="home">‹ 返回</button>
+    <h2 class="pageh">高级工具</h2>
+    <section class="card">
+      <h2>链路模式</h2>
+      <div class="row">
+        <select id="linkSel">
+          <option value="rs485">RS485（I6328A-485）</option>
+          <option value="can">CAN（ESP32 ZEEHO-CAN）</option>
+        </select>
+        <span class="hint">连接时按设备名自动识别；如识别错误可在此手动切换</span>
+      </div>
+    </section>
+    <section class="card">
+      <h2>RS485 原始帧</h2>
+      <div class="row">
+        <select id="sysSel">
+          <option value="51">51 BMS 电池</option>
+          <option value="59">59 MCU 电机</option>
+          <option value="49">49 计量器</option>
+          <option value="81">81 仪表/整车</option>
+          <option value="89">89 TBOX/配置</option>
+          <option value="8B">8B 后雷达</option>
+          <option value="80">80 VIN直读</option>
+        </select>
+        <input id="payload" placeholder="payload hex（可空）"/>
+        <button id="btnBuild" class="ghost">生成帧</button>
+      </div>
+      <div class="row">
+        <input id="frame" placeholder="完整帧 hex"/>
+        <button id="btnSend" class="green">发送</button>
+      </div>
+      <div class="hint">帧格式：4346 | 系统 | 40 | payload | 校验 | 4544（校验自动计算）</div>
+    </section>
+    <section class="card">
+      <h2>CAN 手动 UDS</h2>
+      <div class="row">
+        <input id="canUds" placeholder="UDS hex（如 22F190 / 1003）"/>
+        <button id="btnCanSend" class="green">发送</button>
+      </div>
+      <div class="hint">自动 ISO-TP 封装（单帧/多帧）；响应解读见各功能页</div>
+    </section>
+    <section class="card">
+      <h2>收发日志</h2>
+      <div class="row">
+        <button id="btnClr" class="ghost">清空</button>
+        <label class="hint"><input type="checkbox" id="chkAscii" checked style="flex:none;min-width:auto"/> 显示ASCII</label>
+      </div>
+      <div id="log" class="log"></div>
+    </section>
+  </div>
+
+</main>
+<script>
+${DATA_JS}
+${LOGIC_JS}
+</script>
+</body>
+</html>
+`;
+
+const outPath = path.join(__dirname, '..', 'ios', 'App', 'Resources', 'diag.html');
+fs.writeFileSync(outPath, html, 'utf8');
+console.log('written ' + outPath + ', size=' + html.length + ' bytes, items=' + compact.length);

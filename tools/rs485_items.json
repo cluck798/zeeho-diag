@@ -1,0 +1,3436 @@
+{
+ "items": [
+  {
+   "key": "100016F22021",
+   "id": "F22021",
+   "name": "离车自动关机设置",
+   "unit": "s",
+   "range": "0,255",
+   "req": "5140",
+   "sys": "51",
+   "off": 8,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "value",
+    "expr": "x"
+   }
+  },
+  {
+   "key": "100016F22022",
+   "id": "F22022",
+   "name": "音量大小",
+   "unit": "%",
+   "range": "0,100",
+   "req": "5140",
+   "sys": "51",
+   "off": 10,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&7F)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else y=(x&0x7F);\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F22023",
+   "id": "F22023",
+   "name": "伴我回家功能设置反馈",
+   "unit": "s",
+   "range": "0,180",
+   "req": "8140",
+   "sys": "81",
+   "off": 32,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if(x==0xFF)y=\"0xFF,0x60,0x00,0x00,0x02,0x2F\";else y=x;\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F22024",
+   "id": "F22024",
+   "name": "里程",
+   "unit": "km",
+   "range": "0,999999.9",
+   "req": "8140",
+   "sys": "81",
+   "off": 0,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2",
+     "x3",
+     "x4"
+    ],
+    "kind": "value",
+    "expr": "((x1*0x1000000+x2*0x10000+x3*0x100+(x4&0xF0))>>4)*0.1"
+   }
+  },
+  {
+   "key": "100016F25051",
+   "id": "F25051",
+   "name": "电池电量",
+   "unit": "%",
+   "range": "0,100",
+   "req": "4940",
+   "sys": "49",
+   "off": 0,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1*0.5"
+   }
+  },
+  {
+   "key": "100016F25052",
+   "id": "F25052",
+   "name": "电池总电压",
+   "unit": "V",
+   "range": "0,1000",
+   "req": "4940",
+   "sys": "49",
+   "off": 1,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "(x1*256+x2)*0.1"
+   }
+  },
+  {
+   "key": "100016F25053",
+   "id": "F25053",
+   "name": "电池总电流",
+   "unit": "A",
+   "range": "-500,500",
+   "req": "4940",
+   "sys": "49",
+   "off": 3,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "(x1*256+x2)*0.1-500.0"
+   }
+  },
+  {
+   "key": "100016F25054",
+   "id": "F25054",
+   "name": "电池温度",
+   "unit": "℃",
+   "range": "-40,150",
+   "req": "4940",
+   "sys": "49",
+   "off": 5,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1-40"
+   }
+  },
+  {
+   "key": "100016F25055",
+   "id": "F25055",
+   "name": "电池剩余容量",
+   "unit": "Wh",
+   "range": "0,4000",
+   "req": "4940",
+   "sys": "49",
+   "off": 9,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "(x1&0x0F)*256+x2"
+   }
+  },
+  {
+   "key": "100016F25056",
+   "id": "F25056",
+   "name": "计量器温度",
+   "unit": "℃",
+   "range": "-40,150",
+   "req": "4940",
+   "sys": "49",
+   "off": 56,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1-40"
+   }
+  },
+  {
+   "key": "100016F27071",
+   "id": "F27071",
+   "name": "电机控制器温度",
+   "unit": "℃",
+   "range": "-50,140.5",
+   "req": "5940",
+   "sys": "59",
+   "off": 2,
+   "fmt": "%.2f",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1*0.75-50.00"
+   }
+  },
+  {
+   "key": "100016F27072",
+   "id": "F27072",
+   "name": "实时功率",
+   "unit": "W",
+   "range": "-30000,30000",
+   "req": "5940",
+   "sys": "59",
+   "off": 4,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "((x1*256+(x2&0xF0))>>4)*20-30000"
+   }
+  },
+  {
+   "key": "100016F27073",
+   "id": "F27073",
+   "name": "母线电压",
+   "unit": "V",
+   "range": "-100,100",
+   "req": "5940",
+   "sys": "59",
+   "off": 5,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "((x1&0x0F)*256+x2)*0.1-100"
+   }
+  },
+  {
+   "key": "100016F27074",
+   "id": "F27074",
+   "name": "母线电流",
+   "unit": "A",
+   "range": "-100,100",
+   "req": "5940",
+   "sys": "59",
+   "off": 7,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "((x1&0x0F)*256+x2)*0.1-100"
+   }
+  },
+  {
+   "key": "100016F27075",
+   "id": "F27075",
+   "name": "U相电压",
+   "unit": "V",
+   "range": "-100,100",
+   "req": "5940",
+   "sys": "59",
+   "off": 9,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "((x1*256+(x2&0xF0))>>4)*0.1-100"
+   }
+  },
+  {
+   "key": "100016F27076",
+   "id": "F27076",
+   "name": "V相电压",
+   "unit": "V",
+   "range": "-100,100",
+   "req": "5940",
+   "sys": "59",
+   "off": 10,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "((x1&0x0F)*256+x2)*0.1-100"
+   }
+  },
+  {
+   "key": "100016F27077",
+   "id": "F27077",
+   "name": "W相电压",
+   "unit": "V",
+   "range": "-100,100",
+   "req": "5940",
+   "sys": "59",
+   "off": 12,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "((x1*256+(x2&0xF0))>>4)*0.1-100"
+   }
+  },
+  {
+   "key": "100016F27078",
+   "id": "F27078",
+   "name": "U相电流",
+   "unit": "A",
+   "range": "-100,100",
+   "req": "5940",
+   "sys": "59",
+   "off": 13,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "((x1&0x0F)*256+x2)*0.1-100"
+   }
+  },
+  {
+   "key": "100016F27079",
+   "id": "F27079",
+   "name": "V相电流",
+   "unit": "A",
+   "range": "-100,100",
+   "req": "5940",
+   "sys": "59",
+   "off": 15,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "((x1&0x0F)*256+x2)*0.1-100"
+   }
+  },
+  {
+   "key": "100016F2707A",
+   "id": "F2707A",
+   "name": "W相电流",
+   "unit": "A",
+   "range": "-100,100",
+   "req": "5940",
+   "sys": "59",
+   "off": 17,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "((x1*256+(x2&0xF0))>>4)*0.1-100"
+   }
+  },
+  {
+   "key": "100016F2707B",
+   "id": "F2707B",
+   "name": "电机温度",
+   "unit": "℃",
+   "range": "-50,140.5",
+   "req": "5940",
+   "sys": "59",
+   "off": 27,
+   "fmt": "%.2f",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1*0.75-50.00"
+   }
+  },
+  {
+   "key": "100016F2707C",
+   "id": "F2707C",
+   "name": "电摩最高车速设置状态",
+   "unit": "km/h",
+   "range": "0,255",
+   "req": "5940",
+   "sys": "59",
+   "off": 29,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1"
+   }
+  },
+  {
+   "key": "100016F2707D",
+   "id": "F2707D",
+   "name": "转把电压",
+   "unit": "V",
+   "range": "0,10",
+   "req": "5940",
+   "sys": "59",
+   "off": 34,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1*0.1"
+   }
+  },
+  {
+   "key": "100016F2707E",
+   "id": "F2707E",
+   "name": "显示车速",
+   "unit": "km/h",
+   "range": "0,299",
+   "req": "5940",
+   "sys": "59",
+   "off": 36,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "(x1&0x01)*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0B1",
+   "id": "F2B0B1",
+   "name": "电池电量百分比",
+   "unit": "%",
+   "range": "0,100",
+   "req": "5140",
+   "sys": "51",
+   "off": 18,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1*0.5"
+   }
+  },
+  {
+   "key": "100016F2B0B2",
+   "id": "F2B0B2",
+   "name": "电池总电压",
+   "unit": "V",
+   "range": "0,1000",
+   "req": "5140",
+   "sys": "51",
+   "off": 19,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "(x1*256+x2)*0.1"
+   }
+  },
+  {
+   "key": "100016F2B0B3",
+   "id": "F2B0B3",
+   "name": "电池总电流",
+   "unit": "A",
+   "range": "-500,500",
+   "req": "5140",
+   "sys": "51",
+   "off": 21,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "(x1*256+x2)*0.1-500.0"
+   }
+  },
+  {
+   "key": "100016F2B0B4",
+   "id": "F2B0B4",
+   "name": "电池剩余能量",
+   "unit": "Wh",
+   "range": "0,40000",
+   "req": "5140",
+   "sys": "51",
+   "off": 26,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0B5",
+   "id": "F2B0B5",
+   "name": "电池健康度",
+   "unit": "%",
+   "range": "0,100",
+   "req": "5140",
+   "sys": "51",
+   "off": 28,
+   "fmt": "%.1f",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1*0.5"
+   }
+  },
+  {
+   "key": "100016F2B0B6",
+   "id": "F2B0B6",
+   "name": "电池循环次数",
+   "unit": "",
+   "range": "0,2000",
+   "req": "5140",
+   "sys": "51",
+   "off": 40,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0B7",
+   "id": "F2B0B7",
+   "name": "电池单体最高温度",
+   "unit": "℃",
+   "range": "-40,150",
+   "req": "5140",
+   "sys": "51",
+   "off": 42,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1-40"
+   }
+  },
+  {
+   "key": "100016F2B0B8",
+   "id": "F2B0B8",
+   "name": "电池单体最低温度",
+   "unit": "℃",
+   "range": "-40,150",
+   "req": "5140",
+   "sys": "51",
+   "off": 43,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1-40"
+   }
+  },
+  {
+   "key": "100016F2B0B9",
+   "id": "F2B0B9",
+   "name": "电池电芯单体最大电压单体序号",
+   "unit": "",
+   "range": "0,255",
+   "req": "8140",
+   "sys": "81",
+   "off": 18,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1*1"
+   }
+  },
+  {
+   "key": "100016F2B0BA",
+   "id": "F2B0BA",
+   "name": "电池单体电压_1",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 19,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0BB",
+   "id": "F2B0BB",
+   "name": "电池单体电压_2",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 21,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0BC",
+   "id": "F2B0BC",
+   "name": "电池电芯单体最小电压单体序号",
+   "unit": "",
+   "range": "0,255",
+   "req": "8140",
+   "sys": "81",
+   "off": 24,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1"
+    ],
+    "kind": "value",
+    "expr": "x1*1"
+   }
+  },
+  {
+   "key": "100016F2B0BD",
+   "id": "F2B0BD",
+   "name": "电池单体电压_3",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 25,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0BE",
+   "id": "F2B0BE",
+   "name": "电池单体电压_4",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 27,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0BF",
+   "id": "F2B0BF",
+   "name": "电池单体电压_5",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 29,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0C0",
+   "id": "F2B0C0",
+   "name": "电池单体电压_6",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 33,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0C1",
+   "id": "F2B0C1",
+   "name": "电池单体电压_7",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 35,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0C2",
+   "id": "F2B0C2",
+   "name": "电池单体电压_8",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 37,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0C3",
+   "id": "F2B0C3",
+   "name": "电池单体电压_9",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 41,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0C4",
+   "id": "F2B0C4",
+   "name": "电池单体电压_10",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 43,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0C5",
+   "id": "F2B0C5",
+   "name": "电池单体电压_11",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 45,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0C6",
+   "id": "F2B0C6",
+   "name": "电池单体电压_12",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 49,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0C7",
+   "id": "F2B0C7",
+   "name": "电池单体电压_13",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 51,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0C8",
+   "id": "F2B0C8",
+   "name": "电池电芯单体最大电压",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 53,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F2B0C9",
+   "id": "F2B0C9",
+   "name": "电池电芯单体最小电压",
+   "unit": "mV",
+   "range": "0,4500",
+   "req": "8140",
+   "sys": "81",
+   "off": 56,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x1",
+     "x2"
+    ],
+    "kind": "value",
+    "expr": "x1*256+x2"
+   }
+  },
+  {
+   "key": "100016F31001",
+   "id": "F31001",
+   "name": "后雷达工作模式",
+   "unit": "",
+   "range": "",
+   "req": "8B40",
+   "sys": "8B",
+   "off": 0,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x05\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x07\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x08\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F31002",
+   "id": "F31002",
+   "name": "后雷达工作状态",
+   "unit": "",
+   "range": "",
+   "req": "8B40",
+   "sys": "8B",
+   "off": 0,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x0C)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x05\";else if((x&0x0C)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x09\";else if((x&0x0C)==0x08)y=\"0xFF,0x60,0x00,0x00,0x00,0x34\";else if((x&0x0C)==0x0C)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F31003",
+   "id": "F31003",
+   "name": "后雷达BSD功能设置状态",
+   "unit": "",
+   "range": "",
+   "req": "8B40",
+   "sys": "8B",
+   "off": 0,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x30)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x30)==0x10) y=\"0xFF,0x60,0x00,0x00,0x01,0x0A\";else if((x&0x30)==0x20)y=\"0xFF,0x60,0x00,0x00,0x01,0x0B\";else if((x&0x30)==0x30)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F31004",
+   "id": "F31004",
+   "name": "后雷达RCW功能设置状态",
+   "unit": "",
+   "range": "",
+   "req": "8B40",
+   "sys": "8B",
+   "off": 0,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0xC0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0xC0)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x0A\";else if((x&0xC0)==0x80)y=\"0xFF,0x60,0x00,0x00,0x01,0x0B\";else if((x&0xC0)==0xC0)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F32021",
+   "id": "F32021",
+   "name": "防盗震动灵敏度",
+   "unit": "",
+   "range": "",
+   "req": "5140",
+   "sys": "51",
+   "off": 1,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0xE0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if((x&0xE0)==0x20)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0xE0)==0x40)y=\"0xFF,0x60,0x00,0x00,0x00,0x96\";else if((x&0xE0)==0x60)y=\"0xFF,0x60,0x00,0x00,0x00,0x97\";else if((x&0xE0)==0x80)y=\"0xFF,0x60,0x00,0x00,0x00,0x98\";else if(((x&0xE0)==0xC0)||((x&0xE0)==0xA0)||((x&0xE0)==0xE0))y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F32022",
+   "id": "F32022",
+   "name": "超时自动下电设置",
+   "unit": "",
+   "range": "",
+   "req": "5140",
+   "sys": "51",
+   "off": 9,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0xF0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if((x&0xF0)==0x10)y=\"0xFF,0x60,0x00,0x00,0x00,0x99\";else if((x&0xF0)==0x20)y=\"0xFF,0x60,0x00,0x00,0x00,0x9A\";else if((x&0xF0)==0x30)y=\"0xFF,0x60,0x00,0x00,0x00,0x9B\";else if((x&0xF0)==0x40)y=\"0xFF,0x60,0x00,0x00,0x00,0x9C\";else if((x&0xF0)==0x50)y=\"0xFF,0x60,0x00,0x00,0x00,0x9D\";else if((x&0xF0)==0x60)y=\"0xFF,0x60,0x00,0x00,0x00,0x9E\";else if((x&0xF0)==0x70)y=\"0xFF,0x60,0x00,0x00,0x00,0x9F\";else if((x&0xF0)==0x80)y=\"0xFF,0x60,0x00,0x00,0x01,0x00\";else if((x&0xF0)==0x90)y=\"0xFF,0x60,0x00,0x00,0x01,0x01\";else if((x&0xF0)==0xA0)y=\"0xFF,0x60,0x00,0x00,0x01,0x02\";else if((x&0xF0)==0xB0)y=\"0xFF,0x60,0x00,0x00,0x01,0x03\";else if((x&0xF0)==0xC0)y=\"0xFF,0x60,0x00,0x00,0x01,0x04\";else if((x&0xF0)==0xD0)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF0)==0xE0)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF0)==0xF0)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F32023",
+   "id": "F32023",
+   "name": "离车自动关机功能状态",
+   "unit": "",
+   "range": "",
+   "req": "5140",
+   "sys": "51",
+   "off": 13,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x20)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x20)==0x20) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F32024",
+   "id": "F32024",
+   "name": "精准续航计算设置",
+   "unit": "",
+   "range": "",
+   "req": "5140",
+   "sys": "51",
+   "off": 13,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x40)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x40)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F32025",
+   "id": "F32025",
+   "name": "龙头锁状态",
+   "unit": "",
+   "range": "",
+   "req": "8140",
+   "sys": "81",
+   "off": 11,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x04)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x0C\";else if((x&0x04)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x0D\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F32026",
+   "id": "F32026",
+   "name": "密码钥匙功能状态",
+   "unit": "",
+   "range": "",
+   "req": "8140",
+   "sys": "81",
+   "off": 13,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x01)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x01)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F32027",
+   "id": "F32027",
+   "name": "雷达音效开关状态",
+   "unit": "",
+   "range": "",
+   "req": "8140",
+   "sys": "81",
+   "off": 13,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x02)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x02)==0x02) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F32028",
+   "id": "F32028",
+   "name": "自动闭锁功能设置反馈",
+   "unit": "",
+   "range": "",
+   "req": "8140",
+   "sys": "81",
+   "off": 13,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x40)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x40)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F32029",
+   "id": "F32029",
+   "name": "远程禁止上电状态",
+   "unit": "",
+   "range": "",
+   "req": "8140",
+   "sys": "81",
+   "off": 13,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x80)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x66\";else if((x&0x80)==0x80) y=\"0xFF,0x60,0x00,0x00,0x01,0x67\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3202A",
+   "id": "F3202A",
+   "name": "坐垫压力传感器状态",
+   "unit": "",
+   "range": "",
+   "req": "8140",
+   "sys": "81",
+   "off": 23,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x04)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x0E\";else if((x&0x04)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x0F\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3202B",
+   "id": "F3202B",
+   "name": "原厂NFC卡状态",
+   "unit": "",
+   "range": "",
+   "req": "8140",
+   "sys": "81",
+   "off": 31,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x04)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x10\";else if((x&0x04)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x11\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3202C",
+   "id": "F3202C",
+   "name": "坐垫传感器开关设置反馈",
+   "unit": "",
+   "range": "",
+   "req": "8140",
+   "sys": "81",
+   "off": 31,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x08)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x08)==0x08) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F35051",
+   "id": "F35051",
+   "name": "电池型号信息",
+   "unit": "",
+   "range": "",
+   "req": "4940",
+   "sys": "49",
+   "off": 7,
+   "fmt": "%d",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x46\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x47\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x48\";else if((x&0x03)==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x49\";//if((x&0xF0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x4A\";else if((x&0xF0)==0x10) y=\"0xFF,0x60,0x00,0x00,0x01,0x4B\";else if((x&0xF0)==0x20)y=\"0xFF,0x60,0x00,0x00,0x01,0x4C\";else if((x&0xF0)==0x30)y=\"0xFF,0x60,0x00,0x00,0x01,0x4D\";else if((x&0xF0)==0x40)y=\"0xFF,0x60,0x00,0x00,0x01,0x4E\";else if(((x&0xF0)==0x50)||((x&0xF0)==0x60)||((x&0xF0)==0x70)||((x&0xF0)==0x80)||((x&0xF0)==0x90)||((x&0xF0)==0xA0)||((x&0xF0)==0xB0)||((x&0xF0)==0xC0)||((x&0xF0)==0xD0)||((x&0xF0)==0xE0)||((x&0xF0)==0xF0))y=\"0xFF,0x60,0x00,0x00,0x00,0x36\";//if((x&0xF0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x4A\";else if((x&0xF0)==0x10) y=\"0xFF,0x60,0x00,0x00,0x01,0x4F\";else if((x&0xF0)==0x20)y=\"0xFF,0x60,0x00,0x00,0x01,0x50\";else if((x&0xF0)==0x30)y=\"0xFF,0x60,0x00,0x00,0x01,0x51\";else if((x&0xF0)==0x40)y=\"0xFF,0x60,0x00,0x00,0x01,0x52\";else if((x&0xF0)==0x50)y=\"0xFF,0x60,0x00,0x00,0x01,0x53\";else if((x&0xF0)==0x60)y=\"0xFF,0x60,0x00,0x00,0x01,0x54\";else if((x&0xF0)==0x70)y=\"0xFF,0x60,0x00,0x00,0x01,0x55\";else if(((x&0xF0)==0x80)||((x&0xF0)==0x90)||((x&0xF0)==0xA0)||((x&0xF0)==0xB0)||((x&0xF0)==0xC0)||((x&0xF0)==0xD0)||((x&0xF0)==0xE0)||((x&0xF0)==0xF0))y=\"0xFF,0x60,0x00,0x00,0x00,0x36\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F37071",
+   "id": "F37071",
+   "name": "能量回收状态",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 3,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x18)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x18)==0x08) y=\"0xFF,0x60,0x00,0x00,0x00,0x96\";else if((x&0x18)==0x10)y=\"0xFF,0x60,0x00,0x00,0x00,0x98\";else if((x&0x18)==0x18)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F37072",
+   "id": "F37072",
+   "name": "电机速度模式",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 3,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x80)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x12\";else if((x&0x80)==0x80) y=\"0xFF,0x60,0x00,0x00,0x01,0x13\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F37073",
+   "id": "F37073",
+   "name": "自动驻车状态",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 23,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x0C)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x0C)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";else if((x&0x0C)==0x08)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0x0C)==0x0C)y=\"0xFF,0x60,0x00,0x00,0x00,0x34\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F37074",
+   "id": "F37074",
+   "name": "电自最高车速设置状态",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 24,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x14\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x15\";else if((x&0x03)==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x16\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F37075",
+   "id": "F37075",
+   "name": "eTcs功能设置状态",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 24,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x08)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x08)==0x08) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F37076",
+   "id": "F37076",
+   "name": "自动定速巡航状态设置状态",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 24,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x40)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x40)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F37077",
+   "id": "F37077",
+   "name": "低电量长续航设置状态",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 24,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x80)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x80)==0x80) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F37078",
+   "id": "F37078",
+   "name": "边撑感应功能设置状态",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 25,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x04)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x04)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F37079",
+   "id": "F37079",
+   "name": "边撑开关落下状态",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 25,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x20)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x17\";else if((x&0x20)==0x20) y=\"0xFF,0x60,0x00,0x00,0x01,0x18\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3707A",
+   "id": "F3707A",
+   "name": "简易骑行模式设置状态",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 30,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x01)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x01)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3707B",
+   "id": "F3707B",
+   "name": "刹车断电功能状态",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 31,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x08)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x08)==0x08) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3707C",
+   "id": "F3707C",
+   "name": "陡坡缓降功能设置状态",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 36,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x40)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x40)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3707D",
+   "id": "F3707D",
+   "name": "适配电池型号信息",
+   "unit": "",
+   "range": "",
+   "req": "5940",
+   "sys": "59",
+   "off": 21,
+   "fmt": "&s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x0F)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x4A\";else if((x&0x0F)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x4F\";else if((x&0x0F)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x50\";else if((x&0x0F)==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x51\";else if((x&0x0F)==0x04)y=\"0xFF,0x60,0x00,0x00,0x01,0x52\";else if((x&0x0F)==0x05)y=\"0xFF,0x60,0x00,0x00,0x01,0x53\";else if((x&0x0F)==0x06)y=\"0xFF,0x60,0x00,0x00,0x01,0x54\";else if((x&0x0F)==0x07)y=\"0xFF,0x60,0x00,0x00,0x01,0x55\";else if(((x&0x0F)==0x08)||((x&0x0F)==0x09)||((x&0x0F)==0x0A)||((x&0x0F)==0x0B)||((x&0x0F)==0x0C)||((x&0x0F)==0x0D)||((x&0x0F)==0x0E)||((x&0x0F)==0x0F))y=\"0xFF,0x60,0x00,0x00,0x00,0x36\";//if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x28\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x47\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x48\";else if((x&0x03)==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x49\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F39091",
+   "id": "F39091",
+   "name": "蓝牙连接状态",
+   "unit": "",
+   "range": "",
+   "req": "8940",
+   "sys": "89",
+   "off": 6,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x08)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x19\";else if((x&0x08)==0x08) y=\"0xFF,0x60,0x00,0x00,0x01,0x1A\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F39092",
+   "id": "F39092",
+   "name": "后雷达配置",
+   "unit": "",
+   "range": "",
+   "req": "8940",
+   "sys": "89",
+   "off": 45,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x1C\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x1D\";else if((x&0x03)==0x03)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F39093",
+   "id": "F39093",
+   "name": "ABS配置",
+   "unit": "",
+   "range": "",
+   "req": "8940",
+   "sys": "89",
+   "off": 45,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x0C)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0x0C)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x1C\";else if((x&0x0C)==0x08)y=\"0xFF,0x60,0x00,0x00,0x01,0x1D\";else if((x&0x0C)==0x0C)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F39094",
+   "id": "F39094",
+   "name": "车型款式",
+   "unit": "",
+   "range": "",
+   "req": "8940",
+   "sys": "89",
+   "off": 46,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x1E\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x1F\";else if((x&0x03)==0x03)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F39095",
+   "id": "F39095",
+   "name": "电池种类",
+   "unit": "",
+   "range": "",
+   "req": "8940",
+   "sys": "89",
+   "off": 46,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x0C)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0x0C)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x20\";else if((x&0x0C)==0x08)y=\"0xFF,0x60,0x00,0x00,0x01,0x21\";else if((x&0x0C)==0x0C)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F39096",
+   "id": "F39096",
+   "name": "车型种类",
+   "unit": "",
+   "range": "",
+   "req": "8940",
+   "sys": "89",
+   "off": 46,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x30)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0x30)==0x10) y=\"0xFF,0x60,0x00,0x00,0x01,0x22\";else if((x&0x30)==0x20)y=\"0xFF,0x60,0x00,0x00,0x01,0x23\";else if((x&0x30)==0x30)y=\"0xFF,0x60,0x00,0x00,0x01,0x24\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F39097",
+   "id": "F39097",
+   "name": "法规",
+   "unit": "",
+   "range": "",
+   "req": "8940",
+   "sys": "89",
+   "off": 46,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0xC0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0xC0)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x25\";else if((x&0xC0)==0x80)y=\"0xFF,0x60,0x00,0x00,0x01,0x26\";else if((x&0xC0)==0xC0)y=\"0xFF,0x60,0x00,0x00,0x01,0x27\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F39098",
+   "id": "F39098",
+   "name": "车型信息",
+   "unit": "",
+   "range": "",
+   "req": "8940",
+   "sys": "89",
+   "off": 8,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if(x==0x10)y=\"0xFF,0x60,0x00,0x00,0x01,0x56\";else if(x==0x11)y=\"0xFF,0x60,0x00,0x00,0x01,0x57\";else if(x==0x12)y=\"0xFF,0x60,0x00,0x00,0x01,0x57\";else if(x==0x13)y=\"0xFF,0x60,0x00,0x00,0x01,0x58\";else if(x==0x14)y=\"0xFF,0x60,0x00,0x00,0x01,0x58\";else if(x==0x15)y=\"0xFF,0x60,0x00,0x00,0x01,0x56\";else if(x==0x16)y=\"0xFF,0x60,0x00,0x00,0x01,0x57\";else if(x==0x17)y=\"0xFF,0x60,0x00,0x00,0x01,0x57\";else if(x==0x18)y=\"0xFF,0x60,0x00,0x00,0x01,0x59\";else if(x==0x19)y=\"0xFF,0x60,0x00,0x00,0x01,0x59\";else if(x==0xA0)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0x60)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0xE0)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0xA1)y=\"0xFF,0x60,0x00,0x00,0x01,0x56\";else if(x==0x61)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0xE1)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0xA2)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0xE2)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0x62)y=\"0xFF,0x60,0x00,0x00,0x01,0x59\";else if(x==0x63)y=\"0xFF,0x60,0x00,0x00,0x01,0x59\";else if(x==0x68)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0x69)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0x6A)y=\"0xFF,0x60,0x00,0x00,0x01,0x5B\";else if(x==0x6B)y=\"0xFF,0x60,0x00,0x00,0x01,0x56\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";//if(x==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x5C\";else if(x==0x01)y=\"0xFF,0x60,0x00,0x00,0x01,0x5D\";else if(x==0x04)y=\"0xFF,0x60,0x00,0x00,0x01,0x5E\";else if(x==0x05)y=\"0xFF,0x60,0x00,0x00,0x01,0x5F\";else if(x==0xFF)y=\"0xFF,0x60,0x00,0x00,0x00,0x36\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3B0B1",
+   "id": "F3B0B1",
+   "name": "BMS厂家",
+   "unit": "",
+   "range": "",
+   "req": "5140",
+   "sys": "51",
+   "off": 5,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if(x==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if(x==0x01)y=\"0xFF,0x60,0x00,0x00,0x01,0x28\";else if(x==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x29\";else if(x==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x2A\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3B0B2",
+   "id": "F3B0B2",
+   "name": "电池充电状态",
+   "unit": "",
+   "range": "",
+   "req": "5140",
+   "sys": "51",
+   "off": 15,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x07)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if((x&0x07)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x2B\";else if((x&0x07)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x2C\";else if((x&0x07)==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x2D\";else if((x&0x07)==0x04)y=\"0xFF,0x60,0x00,0x00,0x01,0x2E\";else if((x&0x07)==0x05)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0x07)==0x06)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0x07)==0x07)y=\"0xFF,0x60,0x00,0x00,0x01,0x2F\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3B0B3",
+   "id": "F3B0B3",
+   "name": "BMS系统故障等级",
+   "unit": "",
+   "range": "",
+   "req": "5140",
+   "sys": "51",
+   "off": 23,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0x0C)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x30\";else if((x&0x0C)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x31\";else if((x&0x0C)==0x08)y=\"0xFF,0x60,0x00,0x00,0x01,0x32\";else if((x&0x0C)==0x0C)y=\"0xFF,0x60,0x00,0x00,0x01,0x33\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3B0B4",
+   "id": "F3B0B4",
+   "name": "电池（电芯）供应商厂家",
+   "unit": "",
+   "range": "",
+   "req": "5140",
+   "sys": "51",
+   "off": 32,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if(x==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if(x==0x01)y=\"0xFF,0x60,0x00,0x00,0x01,0x28\";else if(x==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x29\";else if(x==0x03)y\"0xFF,0x60,0x00,0x00,0x01,0x2A\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3B0B5",
+   "id": "F3B0B5",
+   "name": "电池型号",
+   "unit": "",
+   "range": "",
+   "req": "5140",
+   "sys": "51",
+   "off": 36,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if(x==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if(x==0x01)y=\"0xFF,0x60,0x00,0x00,0x01,0x34\";else if(x==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x35\";else if(x==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x36\";else if(x==0x04)y=\"0xFF,0x60,0x00,0x00,0x01,0x37\";else if(x==0x05)y=\"0xFF,0x60,0x00,0x00,0x01,0x38\";else if(x==0x06)y=\"0xFF,0x60,0x00,0x00,0x01,0x39\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";\nreturn y;"
+   }
+  },
+  {
+   "key": "100016F3B0B6",
+   "id": "F3B0B6",
+   "name": "充电功率设置",
+   "unit": "",
+   "range": "",
+   "req": "8140",
+   "sys": "81",
+   "off": 58,
+   "fmt": "%s",
+   "script": {
+    "args": [
+     "x"
+    ],
+    "kind": "state",
+    "js": "let y=\"\";if((x&0xF8)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x3A\";else if((x&0xF8)==0x08) y=\"0xFF,0x60,0x00,0x00,0x01,0x3B\";else if((x&0xF8)==0x10)y=\"0xFF,0x60,0x00,0x00,0x01,0x3C\";else if((x&0xF8)==0x18)y=\"0xFF,0x60,0x00,0x00,0x01,0x3D\";else if((x&0xF8)==0x20)y=\"0xFF,0x60,0x00,0x00,0x01,0x3E\";else if((x&0xF8)==0x28)y=\"0xFF,0x60,0x00,0x00,0x01,0x3F\";else if((x&0xF8)==0x30)y=\"0xFF,0x60,0x00,0x00,0x01,0x40\";else if((x&0xF8)==0x38)y=\"0xFF,0x60,0x00,0x00,0x01,0x41\";else if((x&0xF8)==0x40)y=\"0xFF,0x60,0x00,0x00,0x01,0x42\";else if((x&0xF8)==0x48)y=\"0xFF,0x60,0x00,0x00,0x01,0x43\";else if((x&0xF8)==0x50)y=\"0xFF,0x60,0x00,0x00,0x01,0x44\";else if((x&0xF8)==0x58)y=\"0xFF,0x60,0x00,0x00,0x01,0x45\";else if((x&0xF8)==0x60)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF8)==0x68)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF8)==0x70)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF8)==0x78)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF8)==0x80)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if(((x&0xF8)>=0x88)&&((x&0xF8)==0xF8)))y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+   }
+  }
+ ],
+ "bySys": {
+  "49": [
+   {
+    "key": "100016F25051",
+    "id": "F25051",
+    "name": "电池电量",
+    "unit": "%",
+    "range": "0,100",
+    "req": "4940",
+    "sys": "49",
+    "off": 0,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1*0.5"
+    }
+   },
+   {
+    "key": "100016F25052",
+    "id": "F25052",
+    "name": "电池总电压",
+    "unit": "V",
+    "range": "0,1000",
+    "req": "4940",
+    "sys": "49",
+    "off": 1,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "(x1*256+x2)*0.1"
+    }
+   },
+   {
+    "key": "100016F25053",
+    "id": "F25053",
+    "name": "电池总电流",
+    "unit": "A",
+    "range": "-500,500",
+    "req": "4940",
+    "sys": "49",
+    "off": 3,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "(x1*256+x2)*0.1-500.0"
+    }
+   },
+   {
+    "key": "100016F25054",
+    "id": "F25054",
+    "name": "电池温度",
+    "unit": "℃",
+    "range": "-40,150",
+    "req": "4940",
+    "sys": "49",
+    "off": 5,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1-40"
+    }
+   },
+   {
+    "key": "100016F25055",
+    "id": "F25055",
+    "name": "电池剩余容量",
+    "unit": "Wh",
+    "range": "0,4000",
+    "req": "4940",
+    "sys": "49",
+    "off": 9,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "(x1&0x0F)*256+x2"
+    }
+   },
+   {
+    "key": "100016F25056",
+    "id": "F25056",
+    "name": "计量器温度",
+    "unit": "℃",
+    "range": "-40,150",
+    "req": "4940",
+    "sys": "49",
+    "off": 56,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1-40"
+    }
+   },
+   {
+    "key": "100016F35051",
+    "id": "F35051",
+    "name": "电池型号信息",
+    "unit": "",
+    "range": "",
+    "req": "4940",
+    "sys": "49",
+    "off": 7,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x46\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x47\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x48\";else if((x&0x03)==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x49\";//if((x&0xF0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x4A\";else if((x&0xF0)==0x10) y=\"0xFF,0x60,0x00,0x00,0x01,0x4B\";else if((x&0xF0)==0x20)y=\"0xFF,0x60,0x00,0x00,0x01,0x4C\";else if((x&0xF0)==0x30)y=\"0xFF,0x60,0x00,0x00,0x01,0x4D\";else if((x&0xF0)==0x40)y=\"0xFF,0x60,0x00,0x00,0x01,0x4E\";else if(((x&0xF0)==0x50)||((x&0xF0)==0x60)||((x&0xF0)==0x70)||((x&0xF0)==0x80)||((x&0xF0)==0x90)||((x&0xF0)==0xA0)||((x&0xF0)==0xB0)||((x&0xF0)==0xC0)||((x&0xF0)==0xD0)||((x&0xF0)==0xE0)||((x&0xF0)==0xF0))y=\"0xFF,0x60,0x00,0x00,0x00,0x36\";//if((x&0xF0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x4A\";else if((x&0xF0)==0x10) y=\"0xFF,0x60,0x00,0x00,0x01,0x4F\";else if((x&0xF0)==0x20)y=\"0xFF,0x60,0x00,0x00,0x01,0x50\";else if((x&0xF0)==0x30)y=\"0xFF,0x60,0x00,0x00,0x01,0x51\";else if((x&0xF0)==0x40)y=\"0xFF,0x60,0x00,0x00,0x01,0x52\";else if((x&0xF0)==0x50)y=\"0xFF,0x60,0x00,0x00,0x01,0x53\";else if((x&0xF0)==0x60)y=\"0xFF,0x60,0x00,0x00,0x01,0x54\";else if((x&0xF0)==0x70)y=\"0xFF,0x60,0x00,0x00,0x01,0x55\";else if(((x&0xF0)==0x80)||((x&0xF0)==0x90)||((x&0xF0)==0xA0)||((x&0xF0)==0xB0)||((x&0xF0)==0xC0)||((x&0xF0)==0xD0)||((x&0xF0)==0xE0)||((x&0xF0)==0xF0))y=\"0xFF,0x60,0x00,0x00,0x00,0x36\";\nreturn y;"
+    }
+   }
+  ],
+  "51": [
+   {
+    "key": "100016F22021",
+    "id": "F22021",
+    "name": "离车自动关机设置",
+    "unit": "s",
+    "range": "0,255",
+    "req": "5140",
+    "sys": "51",
+    "off": 8,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "value",
+     "expr": "x"
+    }
+   },
+   {
+    "key": "100016F22022",
+    "id": "F22022",
+    "name": "音量大小",
+    "unit": "%",
+    "range": "0,100",
+    "req": "5140",
+    "sys": "51",
+    "off": 10,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&7F)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else y=(x&0x7F);\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F2B0B1",
+    "id": "F2B0B1",
+    "name": "电池电量百分比",
+    "unit": "%",
+    "range": "0,100",
+    "req": "5140",
+    "sys": "51",
+    "off": 18,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1*0.5"
+    }
+   },
+   {
+    "key": "100016F2B0B2",
+    "id": "F2B0B2",
+    "name": "电池总电压",
+    "unit": "V",
+    "range": "0,1000",
+    "req": "5140",
+    "sys": "51",
+    "off": 19,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "(x1*256+x2)*0.1"
+    }
+   },
+   {
+    "key": "100016F2B0B3",
+    "id": "F2B0B3",
+    "name": "电池总电流",
+    "unit": "A",
+    "range": "-500,500",
+    "req": "5140",
+    "sys": "51",
+    "off": 21,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "(x1*256+x2)*0.1-500.0"
+    }
+   },
+   {
+    "key": "100016F2B0B4",
+    "id": "F2B0B4",
+    "name": "电池剩余能量",
+    "unit": "Wh",
+    "range": "0,40000",
+    "req": "5140",
+    "sys": "51",
+    "off": 26,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0B5",
+    "id": "F2B0B5",
+    "name": "电池健康度",
+    "unit": "%",
+    "range": "0,100",
+    "req": "5140",
+    "sys": "51",
+    "off": 28,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1*0.5"
+    }
+   },
+   {
+    "key": "100016F2B0B6",
+    "id": "F2B0B6",
+    "name": "电池循环次数",
+    "unit": "",
+    "range": "0,2000",
+    "req": "5140",
+    "sys": "51",
+    "off": 40,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0B7",
+    "id": "F2B0B7",
+    "name": "电池单体最高温度",
+    "unit": "℃",
+    "range": "-40,150",
+    "req": "5140",
+    "sys": "51",
+    "off": 42,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1-40"
+    }
+   },
+   {
+    "key": "100016F2B0B8",
+    "id": "F2B0B8",
+    "name": "电池单体最低温度",
+    "unit": "℃",
+    "range": "-40,150",
+    "req": "5140",
+    "sys": "51",
+    "off": 43,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1-40"
+    }
+   },
+   {
+    "key": "100016F32021",
+    "id": "F32021",
+    "name": "防盗震动灵敏度",
+    "unit": "",
+    "range": "",
+    "req": "5140",
+    "sys": "51",
+    "off": 1,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0xE0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if((x&0xE0)==0x20)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0xE0)==0x40)y=\"0xFF,0x60,0x00,0x00,0x00,0x96\";else if((x&0xE0)==0x60)y=\"0xFF,0x60,0x00,0x00,0x00,0x97\";else if((x&0xE0)==0x80)y=\"0xFF,0x60,0x00,0x00,0x00,0x98\";else if(((x&0xE0)==0xC0)||((x&0xE0)==0xA0)||((x&0xE0)==0xE0))y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F32022",
+    "id": "F32022",
+    "name": "超时自动下电设置",
+    "unit": "",
+    "range": "",
+    "req": "5140",
+    "sys": "51",
+    "off": 9,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0xF0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if((x&0xF0)==0x10)y=\"0xFF,0x60,0x00,0x00,0x00,0x99\";else if((x&0xF0)==0x20)y=\"0xFF,0x60,0x00,0x00,0x00,0x9A\";else if((x&0xF0)==0x30)y=\"0xFF,0x60,0x00,0x00,0x00,0x9B\";else if((x&0xF0)==0x40)y=\"0xFF,0x60,0x00,0x00,0x00,0x9C\";else if((x&0xF0)==0x50)y=\"0xFF,0x60,0x00,0x00,0x00,0x9D\";else if((x&0xF0)==0x60)y=\"0xFF,0x60,0x00,0x00,0x00,0x9E\";else if((x&0xF0)==0x70)y=\"0xFF,0x60,0x00,0x00,0x00,0x9F\";else if((x&0xF0)==0x80)y=\"0xFF,0x60,0x00,0x00,0x01,0x00\";else if((x&0xF0)==0x90)y=\"0xFF,0x60,0x00,0x00,0x01,0x01\";else if((x&0xF0)==0xA0)y=\"0xFF,0x60,0x00,0x00,0x01,0x02\";else if((x&0xF0)==0xB0)y=\"0xFF,0x60,0x00,0x00,0x01,0x03\";else if((x&0xF0)==0xC0)y=\"0xFF,0x60,0x00,0x00,0x01,0x04\";else if((x&0xF0)==0xD0)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF0)==0xE0)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF0)==0xF0)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F32023",
+    "id": "F32023",
+    "name": "离车自动关机功能状态",
+    "unit": "",
+    "range": "",
+    "req": "5140",
+    "sys": "51",
+    "off": 13,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x20)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x20)==0x20) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F32024",
+    "id": "F32024",
+    "name": "精准续航计算设置",
+    "unit": "",
+    "range": "",
+    "req": "5140",
+    "sys": "51",
+    "off": 13,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x40)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x40)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3B0B1",
+    "id": "F3B0B1",
+    "name": "BMS厂家",
+    "unit": "",
+    "range": "",
+    "req": "5140",
+    "sys": "51",
+    "off": 5,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if(x==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if(x==0x01)y=\"0xFF,0x60,0x00,0x00,0x01,0x28\";else if(x==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x29\";else if(x==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x2A\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3B0B2",
+    "id": "F3B0B2",
+    "name": "电池充电状态",
+    "unit": "",
+    "range": "",
+    "req": "5140",
+    "sys": "51",
+    "off": 15,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x07)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if((x&0x07)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x2B\";else if((x&0x07)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x2C\";else if((x&0x07)==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x2D\";else if((x&0x07)==0x04)y=\"0xFF,0x60,0x00,0x00,0x01,0x2E\";else if((x&0x07)==0x05)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0x07)==0x06)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0x07)==0x07)y=\"0xFF,0x60,0x00,0x00,0x01,0x2F\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3B0B3",
+    "id": "F3B0B3",
+    "name": "BMS系统故障等级",
+    "unit": "",
+    "range": "",
+    "req": "5140",
+    "sys": "51",
+    "off": 23,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x0C)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x30\";else if((x&0x0C)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x31\";else if((x&0x0C)==0x08)y=\"0xFF,0x60,0x00,0x00,0x01,0x32\";else if((x&0x0C)==0x0C)y=\"0xFF,0x60,0x00,0x00,0x01,0x33\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3B0B4",
+    "id": "F3B0B4",
+    "name": "电池（电芯）供应商厂家",
+    "unit": "",
+    "range": "",
+    "req": "5140",
+    "sys": "51",
+    "off": 32,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if(x==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if(x==0x01)y=\"0xFF,0x60,0x00,0x00,0x01,0x28\";else if(x==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x29\";else if(x==0x03)y\"0xFF,0x60,0x00,0x00,0x01,0x2A\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3B0B5",
+    "id": "F3B0B5",
+    "name": "电池型号",
+    "unit": "",
+    "range": "",
+    "req": "5140",
+    "sys": "51",
+    "off": 36,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if(x==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x94\";else if(x==0x01)y=\"0xFF,0x60,0x00,0x00,0x01,0x34\";else if(x==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x35\";else if(x==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x36\";else if(x==0x04)y=\"0xFF,0x60,0x00,0x00,0x01,0x37\";else if(x==0x05)y=\"0xFF,0x60,0x00,0x00,0x01,0x38\";else if(x==0x06)y=\"0xFF,0x60,0x00,0x00,0x01,0x39\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";\nreturn y;"
+    }
+   }
+  ],
+  "59": [
+   {
+    "key": "100016F27071",
+    "id": "F27071",
+    "name": "电机控制器温度",
+    "unit": "℃",
+    "range": "-50,140.5",
+    "req": "5940",
+    "sys": "59",
+    "off": 2,
+    "fmt": "%.2f",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1*0.75-50.00"
+    }
+   },
+   {
+    "key": "100016F27072",
+    "id": "F27072",
+    "name": "实时功率",
+    "unit": "W",
+    "range": "-30000,30000",
+    "req": "5940",
+    "sys": "59",
+    "off": 4,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "((x1*256+(x2&0xF0))>>4)*20-30000"
+    }
+   },
+   {
+    "key": "100016F27073",
+    "id": "F27073",
+    "name": "母线电压",
+    "unit": "V",
+    "range": "-100,100",
+    "req": "5940",
+    "sys": "59",
+    "off": 5,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "((x1&0x0F)*256+x2)*0.1-100"
+    }
+   },
+   {
+    "key": "100016F27074",
+    "id": "F27074",
+    "name": "母线电流",
+    "unit": "A",
+    "range": "-100,100",
+    "req": "5940",
+    "sys": "59",
+    "off": 7,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "((x1&0x0F)*256+x2)*0.1-100"
+    }
+   },
+   {
+    "key": "100016F27075",
+    "id": "F27075",
+    "name": "U相电压",
+    "unit": "V",
+    "range": "-100,100",
+    "req": "5940",
+    "sys": "59",
+    "off": 9,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "((x1*256+(x2&0xF0))>>4)*0.1-100"
+    }
+   },
+   {
+    "key": "100016F27076",
+    "id": "F27076",
+    "name": "V相电压",
+    "unit": "V",
+    "range": "-100,100",
+    "req": "5940",
+    "sys": "59",
+    "off": 10,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "((x1&0x0F)*256+x2)*0.1-100"
+    }
+   },
+   {
+    "key": "100016F27077",
+    "id": "F27077",
+    "name": "W相电压",
+    "unit": "V",
+    "range": "-100,100",
+    "req": "5940",
+    "sys": "59",
+    "off": 12,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "((x1*256+(x2&0xF0))>>4)*0.1-100"
+    }
+   },
+   {
+    "key": "100016F27078",
+    "id": "F27078",
+    "name": "U相电流",
+    "unit": "A",
+    "range": "-100,100",
+    "req": "5940",
+    "sys": "59",
+    "off": 13,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "((x1&0x0F)*256+x2)*0.1-100"
+    }
+   },
+   {
+    "key": "100016F27079",
+    "id": "F27079",
+    "name": "V相电流",
+    "unit": "A",
+    "range": "-100,100",
+    "req": "5940",
+    "sys": "59",
+    "off": 15,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "((x1&0x0F)*256+x2)*0.1-100"
+    }
+   },
+   {
+    "key": "100016F2707A",
+    "id": "F2707A",
+    "name": "W相电流",
+    "unit": "A",
+    "range": "-100,100",
+    "req": "5940",
+    "sys": "59",
+    "off": 17,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "((x1*256+(x2&0xF0))>>4)*0.1-100"
+    }
+   },
+   {
+    "key": "100016F2707B",
+    "id": "F2707B",
+    "name": "电机温度",
+    "unit": "℃",
+    "range": "-50,140.5",
+    "req": "5940",
+    "sys": "59",
+    "off": 27,
+    "fmt": "%.2f",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1*0.75-50.00"
+    }
+   },
+   {
+    "key": "100016F2707C",
+    "id": "F2707C",
+    "name": "电摩最高车速设置状态",
+    "unit": "km/h",
+    "range": "0,255",
+    "req": "5940",
+    "sys": "59",
+    "off": 29,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1"
+    }
+   },
+   {
+    "key": "100016F2707D",
+    "id": "F2707D",
+    "name": "转把电压",
+    "unit": "V",
+    "range": "0,10",
+    "req": "5940",
+    "sys": "59",
+    "off": 34,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1*0.1"
+    }
+   },
+   {
+    "key": "100016F2707E",
+    "id": "F2707E",
+    "name": "显示车速",
+    "unit": "km/h",
+    "range": "0,299",
+    "req": "5940",
+    "sys": "59",
+    "off": 36,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "(x1&0x01)*256+x2"
+    }
+   },
+   {
+    "key": "100016F37071",
+    "id": "F37071",
+    "name": "能量回收状态",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 3,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x18)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x18)==0x08) y=\"0xFF,0x60,0x00,0x00,0x00,0x96\";else if((x&0x18)==0x10)y=\"0xFF,0x60,0x00,0x00,0x00,0x98\";else if((x&0x18)==0x18)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F37072",
+    "id": "F37072",
+    "name": "电机速度模式",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 3,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x80)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x12\";else if((x&0x80)==0x80) y=\"0xFF,0x60,0x00,0x00,0x01,0x13\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F37073",
+    "id": "F37073",
+    "name": "自动驻车状态",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 23,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x0C)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x0C)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";else if((x&0x0C)==0x08)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0x0C)==0x0C)y=\"0xFF,0x60,0x00,0x00,0x00,0x34\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F37074",
+    "id": "F37074",
+    "name": "电自最高车速设置状态",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 24,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x14\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x15\";else if((x&0x03)==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x16\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F37075",
+    "id": "F37075",
+    "name": "eTcs功能设置状态",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 24,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x08)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x08)==0x08) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F37076",
+    "id": "F37076",
+    "name": "自动定速巡航状态设置状态",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 24,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x40)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x40)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F37077",
+    "id": "F37077",
+    "name": "低电量长续航设置状态",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 24,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x80)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x80)==0x80) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F37078",
+    "id": "F37078",
+    "name": "边撑感应功能设置状态",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 25,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x04)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x04)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F37079",
+    "id": "F37079",
+    "name": "边撑开关落下状态",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 25,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x20)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x17\";else if((x&0x20)==0x20) y=\"0xFF,0x60,0x00,0x00,0x01,0x18\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3707A",
+    "id": "F3707A",
+    "name": "简易骑行模式设置状态",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 30,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x01)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x01)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3707B",
+    "id": "F3707B",
+    "name": "刹车断电功能状态",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 31,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x08)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x08)==0x08) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3707C",
+    "id": "F3707C",
+    "name": "陡坡缓降功能设置状态",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 36,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x40)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x40)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3707D",
+    "id": "F3707D",
+    "name": "适配电池型号信息",
+    "unit": "",
+    "range": "",
+    "req": "5940",
+    "sys": "59",
+    "off": 21,
+    "fmt": "&s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x0F)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x4A\";else if((x&0x0F)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x4F\";else if((x&0x0F)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x50\";else if((x&0x0F)==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x51\";else if((x&0x0F)==0x04)y=\"0xFF,0x60,0x00,0x00,0x01,0x52\";else if((x&0x0F)==0x05)y=\"0xFF,0x60,0x00,0x00,0x01,0x53\";else if((x&0x0F)==0x06)y=\"0xFF,0x60,0x00,0x00,0x01,0x54\";else if((x&0x0F)==0x07)y=\"0xFF,0x60,0x00,0x00,0x01,0x55\";else if(((x&0x0F)==0x08)||((x&0x0F)==0x09)||((x&0x0F)==0x0A)||((x&0x0F)==0x0B)||((x&0x0F)==0x0C)||((x&0x0F)==0x0D)||((x&0x0F)==0x0E)||((x&0x0F)==0x0F))y=\"0xFF,0x60,0x00,0x00,0x00,0x36\";//if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x28\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x47\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x48\";else if((x&0x03)==0x03)y=\"0xFF,0x60,0x00,0x00,0x01,0x49\";\nreturn y;"
+    }
+   }
+  ],
+  "81": [
+   {
+    "key": "100016F22023",
+    "id": "F22023",
+    "name": "伴我回家功能设置反馈",
+    "unit": "s",
+    "range": "0,180",
+    "req": "8140",
+    "sys": "81",
+    "off": 32,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if(x==0xFF)y=\"0xFF,0x60,0x00,0x00,0x02,0x2F\";else y=x;\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F22024",
+    "id": "F22024",
+    "name": "里程",
+    "unit": "km",
+    "range": "0,999999.9",
+    "req": "8140",
+    "sys": "81",
+    "off": 0,
+    "fmt": "%.1f",
+    "script": {
+     "args": [
+      "x1",
+      "x2",
+      "x3",
+      "x4"
+     ],
+     "kind": "value",
+     "expr": "((x1*0x1000000+x2*0x10000+x3*0x100+(x4&0xF0))>>4)*0.1"
+    }
+   },
+   {
+    "key": "100016F2B0B9",
+    "id": "F2B0B9",
+    "name": "电池电芯单体最大电压单体序号",
+    "unit": "",
+    "range": "0,255",
+    "req": "8140",
+    "sys": "81",
+    "off": 18,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1*1"
+    }
+   },
+   {
+    "key": "100016F2B0BA",
+    "id": "F2B0BA",
+    "name": "电池单体电压_1",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 19,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0BB",
+    "id": "F2B0BB",
+    "name": "电池单体电压_2",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 21,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0BC",
+    "id": "F2B0BC",
+    "name": "电池电芯单体最小电压单体序号",
+    "unit": "",
+    "range": "0,255",
+    "req": "8140",
+    "sys": "81",
+    "off": 24,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1"
+     ],
+     "kind": "value",
+     "expr": "x1*1"
+    }
+   },
+   {
+    "key": "100016F2B0BD",
+    "id": "F2B0BD",
+    "name": "电池单体电压_3",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 25,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0BE",
+    "id": "F2B0BE",
+    "name": "电池单体电压_4",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 27,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0BF",
+    "id": "F2B0BF",
+    "name": "电池单体电压_5",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 29,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0C0",
+    "id": "F2B0C0",
+    "name": "电池单体电压_6",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 33,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0C1",
+    "id": "F2B0C1",
+    "name": "电池单体电压_7",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 35,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0C2",
+    "id": "F2B0C2",
+    "name": "电池单体电压_8",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 37,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0C3",
+    "id": "F2B0C3",
+    "name": "电池单体电压_9",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 41,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0C4",
+    "id": "F2B0C4",
+    "name": "电池单体电压_10",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 43,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0C5",
+    "id": "F2B0C5",
+    "name": "电池单体电压_11",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 45,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0C6",
+    "id": "F2B0C6",
+    "name": "电池单体电压_12",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 49,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0C7",
+    "id": "F2B0C7",
+    "name": "电池单体电压_13",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 51,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0C8",
+    "id": "F2B0C8",
+    "name": "电池电芯单体最大电压",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 53,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F2B0C9",
+    "id": "F2B0C9",
+    "name": "电池电芯单体最小电压",
+    "unit": "mV",
+    "range": "0,4500",
+    "req": "8140",
+    "sys": "81",
+    "off": 56,
+    "fmt": "%d",
+    "script": {
+     "args": [
+      "x1",
+      "x2"
+     ],
+     "kind": "value",
+     "expr": "x1*256+x2"
+    }
+   },
+   {
+    "key": "100016F32025",
+    "id": "F32025",
+    "name": "龙头锁状态",
+    "unit": "",
+    "range": "",
+    "req": "8140",
+    "sys": "81",
+    "off": 11,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x04)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x0C\";else if((x&0x04)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x0D\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F32026",
+    "id": "F32026",
+    "name": "密码钥匙功能状态",
+    "unit": "",
+    "range": "",
+    "req": "8140",
+    "sys": "81",
+    "off": 13,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x01)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x01)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F32027",
+    "id": "F32027",
+    "name": "雷达音效开关状态",
+    "unit": "",
+    "range": "",
+    "req": "8140",
+    "sys": "81",
+    "off": 13,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x02)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x02)==0x02) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F32028",
+    "id": "F32028",
+    "name": "自动闭锁功能设置反馈",
+    "unit": "",
+    "range": "",
+    "req": "8140",
+    "sys": "81",
+    "off": 13,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x40)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x40)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F32029",
+    "id": "F32029",
+    "name": "远程禁止上电状态",
+    "unit": "",
+    "range": "",
+    "req": "8140",
+    "sys": "81",
+    "off": 13,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x80)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x66\";else if((x&0x80)==0x80) y=\"0xFF,0x60,0x00,0x00,0x01,0x67\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3202A",
+    "id": "F3202A",
+    "name": "坐垫压力传感器状态",
+    "unit": "",
+    "range": "",
+    "req": "8140",
+    "sys": "81",
+    "off": 23,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x04)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x0E\";else if((x&0x04)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x0F\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3202B",
+    "id": "F3202B",
+    "name": "原厂NFC卡状态",
+    "unit": "",
+    "range": "",
+    "req": "8140",
+    "sys": "81",
+    "off": 31,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x04)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x10\";else if((x&0x04)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x11\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3202C",
+    "id": "F3202C",
+    "name": "坐垫传感器开关设置反馈",
+    "unit": "",
+    "range": "",
+    "req": "8140",
+    "sys": "81",
+    "off": 31,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x08)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x08)==0x08) y=\"0xFF,0x60,0x00,0x00,0x01,0x06\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F3B0B6",
+    "id": "F3B0B6",
+    "name": "充电功率设置",
+    "unit": "",
+    "range": "",
+    "req": "8140",
+    "sys": "81",
+    "off": 58,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0xF8)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x3A\";else if((x&0xF8)==0x08) y=\"0xFF,0x60,0x00,0x00,0x01,0x3B\";else if((x&0xF8)==0x10)y=\"0xFF,0x60,0x00,0x00,0x01,0x3C\";else if((x&0xF8)==0x18)y=\"0xFF,0x60,0x00,0x00,0x01,0x3D\";else if((x&0xF8)==0x20)y=\"0xFF,0x60,0x00,0x00,0x01,0x3E\";else if((x&0xF8)==0x28)y=\"0xFF,0x60,0x00,0x00,0x01,0x3F\";else if((x&0xF8)==0x30)y=\"0xFF,0x60,0x00,0x00,0x01,0x40\";else if((x&0xF8)==0x38)y=\"0xFF,0x60,0x00,0x00,0x01,0x41\";else if((x&0xF8)==0x40)y=\"0xFF,0x60,0x00,0x00,0x01,0x42\";else if((x&0xF8)==0x48)y=\"0xFF,0x60,0x00,0x00,0x01,0x43\";else if((x&0xF8)==0x50)y=\"0xFF,0x60,0x00,0x00,0x01,0x44\";else if((x&0xF8)==0x58)y=\"0xFF,0x60,0x00,0x00,0x01,0x45\";else if((x&0xF8)==0x60)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF8)==0x68)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF8)==0x70)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF8)==0x78)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if((x&0xF8)==0x80)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";else if(((x&0xF8)>=0x88)&&((x&0xF8)==0xF8)))y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+    }
+   }
+  ],
+  "89": [
+   {
+    "key": "100016F39091",
+    "id": "F39091",
+    "name": "蓝牙连接状态",
+    "unit": "",
+    "range": "",
+    "req": "8940",
+    "sys": "89",
+    "off": 6,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x08)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x19\";else if((x&0x08)==0x08) y=\"0xFF,0x60,0x00,0x00,0x01,0x1A\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F39092",
+    "id": "F39092",
+    "name": "后雷达配置",
+    "unit": "",
+    "range": "",
+    "req": "8940",
+    "sys": "89",
+    "off": 45,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x1C\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x1D\";else if((x&0x03)==0x03)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F39093",
+    "id": "F39093",
+    "name": "ABS配置",
+    "unit": "",
+    "range": "",
+    "req": "8940",
+    "sys": "89",
+    "off": 45,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x0C)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0x0C)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x1C\";else if((x&0x0C)==0x08)y=\"0xFF,0x60,0x00,0x00,0x01,0x1D\";else if((x&0x0C)==0x0C)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F39094",
+    "id": "F39094",
+    "name": "车型款式",
+    "unit": "",
+    "range": "",
+    "req": "8940",
+    "sys": "89",
+    "off": 46,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x1E\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x1F\";else if((x&0x03)==0x03)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F39095",
+    "id": "F39095",
+    "name": "电池种类",
+    "unit": "",
+    "range": "",
+    "req": "8940",
+    "sys": "89",
+    "off": 46,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x0C)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0x0C)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x20\";else if((x&0x0C)==0x08)y=\"0xFF,0x60,0x00,0x00,0x01,0x21\";else if((x&0x0C)==0x0C)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F39096",
+    "id": "F39096",
+    "name": "车型种类",
+    "unit": "",
+    "range": "",
+    "req": "8940",
+    "sys": "89",
+    "off": 46,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x30)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0x30)==0x10) y=\"0xFF,0x60,0x00,0x00,0x01,0x22\";else if((x&0x30)==0x20)y=\"0xFF,0x60,0x00,0x00,0x01,0x23\";else if((x&0x30)==0x30)y=\"0xFF,0x60,0x00,0x00,0x01,0x24\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F39097",
+    "id": "F39097",
+    "name": "法规",
+    "unit": "",
+    "range": "",
+    "req": "8940",
+    "sys": "89",
+    "off": 46,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0xC0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x1B\";else if((x&0xC0)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x25\";else if((x&0xC0)==0x80)y=\"0xFF,0x60,0x00,0x00,0x01,0x26\";else if((x&0xC0)==0xC0)y=\"0xFF,0x60,0x00,0x00,0x01,0x27\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F39098",
+    "id": "F39098",
+    "name": "车型信息",
+    "unit": "",
+    "range": "",
+    "req": "8940",
+    "sys": "89",
+    "off": 8,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if(x==0x10)y=\"0xFF,0x60,0x00,0x00,0x01,0x56\";else if(x==0x11)y=\"0xFF,0x60,0x00,0x00,0x01,0x57\";else if(x==0x12)y=\"0xFF,0x60,0x00,0x00,0x01,0x57\";else if(x==0x13)y=\"0xFF,0x60,0x00,0x00,0x01,0x58\";else if(x==0x14)y=\"0xFF,0x60,0x00,0x00,0x01,0x58\";else if(x==0x15)y=\"0xFF,0x60,0x00,0x00,0x01,0x56\";else if(x==0x16)y=\"0xFF,0x60,0x00,0x00,0x01,0x57\";else if(x==0x17)y=\"0xFF,0x60,0x00,0x00,0x01,0x57\";else if(x==0x18)y=\"0xFF,0x60,0x00,0x00,0x01,0x59\";else if(x==0x19)y=\"0xFF,0x60,0x00,0x00,0x01,0x59\";else if(x==0xA0)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0x60)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0xE0)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0xA1)y=\"0xFF,0x60,0x00,0x00,0x01,0x56\";else if(x==0x61)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0xE1)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0xA2)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0xE2)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0x62)y=\"0xFF,0x60,0x00,0x00,0x01,0x59\";else if(x==0x63)y=\"0xFF,0x60,0x00,0x00,0x01,0x59\";else if(x==0x68)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0x69)y=\"0xFF,0x60,0x00,0x00,0x01,0x5A\";else if(x==0x6A)y=\"0xFF,0x60,0x00,0x00,0x01,0x5B\";else if(x==0x6B)y=\"0xFF,0x60,0x00,0x00,0x01,0x56\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";//if(x==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x5C\";else if(x==0x01)y=\"0xFF,0x60,0x00,0x00,0x01,0x5D\";else if(x==0x04)y=\"0xFF,0x60,0x00,0x00,0x01,0x5E\";else if(x==0x05)y=\"0xFF,0x60,0x00,0x00,0x01,0x5F\";else if(x==0xFF)y=\"0xFF,0x60,0x00,0x00,0x00,0x36\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";\nreturn y;"
+    }
+   }
+  ],
+  "8B": [
+   {
+    "key": "100016F31001",
+    "id": "F31001",
+    "name": "后雷达工作模式",
+    "unit": "",
+    "range": "",
+    "req": "8B40",
+    "sys": "8B",
+    "off": 0,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x03)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x05\";else if((x&0x03)==0x01) y=\"0xFF,0x60,0x00,0x00,0x01,0x07\";else if((x&0x03)==0x02)y=\"0xFF,0x60,0x00,0x00,0x01,0x08\";else y=\"0xFF,0x60,0x00,0x00,0x00,0x14\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F31002",
+    "id": "F31002",
+    "name": "后雷达工作状态",
+    "unit": "",
+    "range": "",
+    "req": "8B40",
+    "sys": "8B",
+    "off": 0,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x0C)==0x00)y=\"0xFF,0x60,0x00,0x00,0x01,0x05\";else if((x&0x0C)==0x04) y=\"0xFF,0x60,0x00,0x00,0x01,0x09\";else if((x&0x0C)==0x08)y=\"0xFF,0x60,0x00,0x00,0x00,0x34\";else if((x&0x0C)==0x0C)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F31003",
+    "id": "F31003",
+    "name": "后雷达BSD功能设置状态",
+    "unit": "",
+    "range": "",
+    "req": "8B40",
+    "sys": "8B",
+    "off": 0,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0x30)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0x30)==0x10) y=\"0xFF,0x60,0x00,0x00,0x01,0x0A\";else if((x&0x30)==0x20)y=\"0xFF,0x60,0x00,0x00,0x01,0x0B\";else if((x&0x30)==0x30)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+    }
+   },
+   {
+    "key": "100016F31004",
+    "id": "F31004",
+    "name": "后雷达RCW功能设置状态",
+    "unit": "",
+    "range": "",
+    "req": "8B40",
+    "sys": "8B",
+    "off": 0,
+    "fmt": "%s",
+    "script": {
+     "args": [
+      "x"
+     ],
+     "kind": "state",
+     "js": "let y=\"\";if((x&0xC0)==0x00)y=\"0xFF,0x60,0x00,0x00,0x00,0x95\";else if((x&0xC0)==0x40) y=\"0xFF,0x60,0x00,0x00,0x01,0x0A\";else if((x&0xC0)==0x80)y=\"0xFF,0x60,0x00,0x00,0x01,0x0B\";else if((x&0xC0)==0xC0)y=\"0xFF,0x60,0x00,0x00,0x40,0x19\";\nreturn y;"
+    }
+   }
+  ]
+ }
+}
