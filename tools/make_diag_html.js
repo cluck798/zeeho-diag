@@ -1,4 +1,5 @@
 // make_diag_html.js — 生成 iOS diag.html（RS485/CAN 无线诊断页）
+// datastreams/页面数据：车辆诊断数据整理（UDS 0x22 读 DID + 字节位置 + 解析表达式 + 显示格式）。
 // 用法：node make_diag_html.js  （输出到 ../ios/App/Resources/diag.html）
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +24,7 @@ const VIN_FRAMES = [
   "4346804000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000C04544"
 ];
 
-// CAN 直连预设（ABS 排气，命令来自官方诊断库 模块010/099 的 [SPEFUNC]）
+// CAN 直连预设（ABS 排气命令，按维修资料整理）
 const CAN_PRESETS = {
   abs: [
     ['进入扩展会话', '1003'],
@@ -51,7 +52,7 @@ const SPE_RS485 = {
     "4346714000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000F14544"
   ],
   tpmsFrame: "434617023808594544",
-  nfcTip: "NFC 学卡/删卡为短命令（官方码：学卡 3900→0D0100→放卡→0D0103；删卡 3A00→0D010103），成帧方式需实车实测；可先用\"自定义帧\"或原始帧输入框发送实验。"
+  nfcTip: "NFC 学卡/删卡为短命令（操作码：学卡 3900→0D0100→放卡→0D0103；删卡 3A00→0D010103），成帧方式需实车实测；可先用\"自定义帧\"或原始帧输入框发送实验。"
 };
 
 const DATA_JS = 'var SYS=' + JSON.stringify({ "49": "计量器/BMS", "51": "BMS 电池", "59": "MCU 电机", "81": "仪表/整车", "89": "TBOX/配置", "8B": "后雷达" }) + ';\n'
@@ -338,7 +339,7 @@ function canOnData(hex) {
   }
 }
 
-// 一键前轮/后轮排气流程（官方 [06]/[07] 序列 + 10 秒泵循环）
+// 一键排气流程（泵/阀控制序列 + 10 秒泵循环）
 function absFlow() {
   var id = parseInt(document.getElementById('canIdSel').value, 16);
   var statusEl = document.getElementById('absStatus');
@@ -425,7 +426,7 @@ function absFlow() {
   var tip = document.getElementById('speTip');
   if (tip) tip.textContent = SPE_RS485.nfcTip;
 
-  // CAN 胎压传感器匹配（目标 0x714，库模块 086/093）
+  // CAN 胎压传感器匹配（目标 0x714）
   var c = document.getElementById('btnTpmsRead');
   if (c) c.onclick = function () { canSend(0x714, '220802', '读胎压传感器ID'); };
   var f1 = document.getElementById('btnTpmsFront');
