@@ -11,6 +11,7 @@
 | `ios/` | **iOS 诊断 App**（独立工程，XcodeGen 构建；TrollStore 安装。首页功能格：看数据流 / ABS 排气 / 胎压传感器 / NFC 卡 / 高级工具） |
 | `esp32/` | **ESP32 BLE↔CAN 桥固件**（Arduino；GPIO5/4 接 SN65HVD230 收发器，CANH/L 接诊断口 6/14 脚，500K。BLE 名 `ZEEHO-CAN`，UUID 同商用 6328 模块） |
 | `tools/` | `diag.html` 生成器（`make_diag_html.js` + 数据 `rs485_items.json`），改 UI/数据后重新生成到 `ios/App/Resources/diag.html` |
+| `enclosure/` | 模块 3D 打印外壳（OpenSCAD 参数化）：量好模块尺寸改参数 → 导出 STL 打印/代打 |
 | 根目录 | **桌面诊断工具**（Electron，Windows）：`npm install && npm start`。WiFi/DoIP 直连 + 蓝牙 VCI 扫描 |
 
 ## 硬件
