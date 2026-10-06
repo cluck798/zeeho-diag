@@ -100,6 +100,10 @@ final class ViewController: UIViewController, WKScriptMessageHandler {
             reply(ok ? "{\"ok\":true}" : "{\"ok\":false}")
         case "state":
             reply(mgr.bleState())
+        case "vciProbe":
+            reply(VCISPPBridge.toJSON(VCISPPBridge.shared.probe()))
+        case "vciPaired":
+            reply(VCISPPBridge.toJSON(VCISPPBridge.shared.pairedDevices()))
         default:
             reply(nil)
         }

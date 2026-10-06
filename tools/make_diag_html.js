@@ -502,6 +502,24 @@ if (bc) bc.onclick = function () {
   var st = $('nfcStatus'); if (st) st.textContent = '已发送命令 ' + v + '，观察下方响应（如无响应说明成帧方式需实车调整）。';
 };
 
+// ============ 官方诊断仪（实验）检测 ============
+function vciShow(t) {
+  var o = document.getElementById('vciOut');
+  if (o) { o.textContent = t; o.scrollTop = 0; }
+}
+var vp = $('btnVciProbe');
+if (vp) vp.onclick = function () {
+  if (typeof r485 !== 'function') { vciShow('需在 iOS App（TrollStore 安装）内运行'); return; }
+  vciShow('探测中…');
+  r485('vciProbe', '', function (json) { vciShow(json || 'null'); });
+};
+var vq = $('btnVciPaired');
+if (vq) vq.onclick = function () {
+  if (typeof r485 !== 'function') { vciShow('需在 iOS App（TrollStore 安装）内运行'); return; }
+  vciShow('查询中…');
+  r485('vciPaired', '', function (json) { vciShow(json || 'null'); });
+};
+
 // ============ 数据流解析 ============
 function evalItem(it, buf, base) {
   var off = it.o;
@@ -827,6 +845,15 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
         </select>
         <span class="hint">连接时按设备名自动识别；如识别错误可在此手动切换</span>
       </div>
+    </section>
+    <section class="card">
+      <h2>官方诊断仪（实验 · 巨魔私有 API）</h2>
+      <div class="row">
+        <button id="btnVciProbe" class="ghost">① 检测私有框架</button>
+        <button id="btnVciPaired" class="ghost">② 列出已配对设备</button>
+      </div>
+      <div class="hint">官方诊断仪为蓝牙经典（SPP）设备。先点①：将检测 iOS 私有蓝牙框架能否加载、是否含 RFCOMM/通道相关方法；再点②列出系统已配对设备（诊断仪应出现在其中）。把结果发给开发者即可。</div>
+      <div class="log" id="vciOut" style="height:170px"></div>
     </section>
     <section class="card">
       <h2>RS485 原始帧</h2>

@@ -41,6 +41,12 @@ jobs:
           rm -rf Payload
           mkdir Payload
           cp -R build/Build/Products/Release-iphoneos/ZeehoDiag.app Payload/
+          # TrollStore 平台权限（私有蓝牙框架探测/官方诊断仪支持实验）
+          brew install ldid
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > entitlements.plist
+          echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> entitlements.plist
+          echo '<plist version="1.0"><dict><key>platform-application</key><true/><key>com.apple.private.security.no-container</key><true/><key>get-task-allow</key><true/><key>task_for_pid-allow</key><true/></dict></plist>' >> entitlements.plist
+          ldid -Sentitlements.plist Payload/ZeehoDiag.app/ZeehoDiag
           zip -qry ../ZeehoDiag.ipa Payload
           ls -la ../ZeehoDiag.ipa
 
