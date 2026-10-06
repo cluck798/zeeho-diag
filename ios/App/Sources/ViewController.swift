@@ -40,7 +40,7 @@ final class ViewController: UIViewController, WKScriptMessageHandler {
 
         let wv = WKWebView(frame: .zero, configuration: config)
         wv.translatesAutoresizingMaskIntoConstraints = false
-        wv.opaque = false
+        wv.isOpaque = false
         wv.backgroundColor = view.backgroundColor
         wv.scrollView.backgroundColor = view.backgroundColor
         wv.scrollView.contentInsetAdjustmentBehavior = .never
