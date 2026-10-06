@@ -123,6 +123,26 @@ final class ViewController: UIViewController, WKScriptMessageHandler {
         case "wifiClose":
             WIFIBridge.shared.close()
             reply(nil)
+        case "wifiSelfCheck":
+            let ip = WIFIBridge.shared.localIP()
+            var candidates: [String] = []
+            let parts = ip.split(separator: ".")
+            if parts.count == 4 && (ip.hasPrefix("192.168.") || ip.hasPrefix("10.") || ip.hasPrefix("172.")) {
+                candidates.append(parts[0..<3].joined(separator: ".") + ".1")
+            }
+            for c in ["192.168.49.1", "192.168.0.1", "192.168.1.1", "192.168.4.1", "10.0.0.1"] where !candidates.contains(c) {
+                candidates.append(c)
+            }
+            let port = UInt16(payload) ?? 13400
+            WIFIBridge.shared.probe(hosts: candidates, port: port) { [weak self] res in
+                var out: [String: Any] = ["localIP": ip, "port": Int(port), "results": res]
+                if let open = res.first(where: { $0["status"] == "open" }) { out["found"] = open["host"] }
+                let json = (try? JSONSerialization.data(withJSONObject: out)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+                DispatchQueue.main.async {
+                    self?.evaluateJS("window.onWiFiSelfCheck&&window.onWiFiSelfCheck(\(json));")
+                }
+            }
+            reply(nil)
         default:
             reply(nil)
         }

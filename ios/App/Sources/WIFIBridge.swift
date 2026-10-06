@@ -29,7 +29,7 @@ final class WIFIBridge {
             case .ready:
                 self?.emit(["type": "connected", "data": "\(host):\(port)"])
             case .failed(let e):
-                self?.emit(["type": "error", "data": "\(e)"])
+                self?.emit(["type": "error", "data": Self.humanError(e)])
                 self?.close()
             case .cancelled:
                 self?.emit(["type": "closed", "data": ""])
@@ -77,6 +77,74 @@ final class WIFIBridge {
     func close() {
         conn?.cancel()
         conn = nil
+    }
+
+    // MARK: - 错误翻译成人话
+    static func humanError(_ e: Error) -> String {
+        let s = "\(e)"
+        if s.contains("rawValue: 53") { return "连接被中止（POSIX 53）：常见原因——本地网络权限未开 / WiFi 被「无线局域网助理」切走 / 网关拒绝" }
+        if s.contains("rawValue: 61") { return "端口未开放（POSIX 61）：网关 IP 可能不对（试试 192.168.0.1，或先点「网络自检」）" }
+        if s.contains("rawValue: 65") { return "网络不可达（POSIX 65）：手机可能不在车辆热点网段（先点「网络自检」看本机 IP）" }
+        if s.contains("rawValue: 51") { return "网络不可达（POSIX 51）：检查是否连着车辆热点" }
+        return s
+    }
+
+    // MARK: - 本机 en0（WiFi）IPv4 地址
+    func localIP() -> String {
+        var address = ""
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return "" }
+        var ptr: UnsafeMutablePointer<ifaddrs>? = first
+        while let cur = ptr {
+            let ifa = cur.pointee
+            let name = String(cString: ifa.ifa_name)
+            if name == "en0", let addr = ifa.ifa_addr, addr.pointee.sa_family == UInt8(AF_INET) {
+                var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                if getnameinfo(addr, socklen_t(addr.pointee.sa_len), &hostname, socklen_t(hostname.count), nil, 0, NI_NUMERICHOST) == 0 {
+                    address = String(cString: hostname)
+                    break
+                }
+            }
+            ptr = ifa.ifa_next
+        }
+        freeifaddrs(ifaddr)
+        return address
+    }
+
+    // MARK: - 端口探测（对一组候选网关并发尝试 TCP 连接，1.2 秒超时）
+    func probe(hosts: [String], port: UInt16, done: @escaping ([[String: String]]) -> Void) {
+        let group = DispatchGroup()
+        var results: [[String: String]] = []
+        let lock = NSLock()
+        for h in hosts {
+            guard let p = NWEndpoint.Port(rawValue: port) else { continue }
+            group.enter()
+            let c = NWConnection(host: NWEndpoint.Host(h), port: p, using: .tcp)
+            var finished = false
+            let finish: (String) -> Void = { status in
+                lock.lock()
+                let already = finished
+                finished = true
+                lock.unlock()
+                if already { return }
+                lock.lock()
+                results.append(["host": h, "status": status])
+                lock.unlock()
+                c.cancel()
+                group.leave()
+            }
+            c.stateUpdateHandler = { st in
+                switch st {
+                case .ready: finish("open")
+                case .failed: finish("fail")
+                case .waiting: finish("unreachable")
+                default: break
+                }
+            }
+            c.start(queue: queue)
+            DispatchQueue.global().asyncAfter(deadline: .now() + 1.2) { finish("timeout") }
+        }
+        group.notify(queue: DispatchQueue.global()) { done(results) }
     }
 
     // MARK: - 事件输出
