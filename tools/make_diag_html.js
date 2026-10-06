@@ -701,6 +701,7 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
       </div>
       <div id="devList" class="devlist"></div>
       <div id="svcInfo" class="hint">未连接</div>
+      <div class="hint">找不到「官方诊断仪」？它是蓝牙经典（SPP）设备，BLE 扫描永远看不到——请在 iPhone「设置 → 蓝牙」中配对查看。本 App 支持的是 BLE 透传模块（I6328A-485 / ESP32-CAN）。</div>
     </section>
     <div class="tiles">
       <div class="tile" data-nav="data"><div class="tico">📊</div><div class="tt">看数据流</div><div class="ts">电池 / 电机 / 仪表</div></div>
