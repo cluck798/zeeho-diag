@@ -716,7 +716,7 @@ window.onWiFiSelfCheck = function (r) {
     lines.push('✖ 未发现可用网关：① 确认手机已连车辆热点 ② 车辆需通电且诊断服务开启 ③ 也可试试把网关 IP 手动改为 192.168.0.1');
     wifiSt('未发现可用网关——请看下方自检详情');
   }
-  if (so) so.textContent = lines.join('\n');
+  if (so) so.textContent = lines.join('\\n');
 };
 
 // ============ 数据流解析 ============

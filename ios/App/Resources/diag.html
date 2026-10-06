@@ -195,7 +195,7 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
     <h2 class="pageh">WiFi 直连（DoIP 无线诊断）</h2>
     <section class="card">
       <h2>连接车辆热点</h2>
-      <div class="status" id="wifiStatus">① 先把手机连上车辆热点（ZEEHO- 开头；密码为 VIN 末 8 位）→ ② 点「连接」。首次会弹「本地网络」权限，请选允许。</div>
+      <div class="status" id="wifiStatus">① 先把手机连上车辆热点（ZEEHO- 开头；密码为 VIN 末 8 位）→ ② 点「连接」。连不上就先点「网络自检」。建议关闭「设置→蜂窝网络→无线局域网助理」，防止连接被切走。</div>
       <div class="row">
         <input id="wifiHost" value="192.168.49.1"/>
         <input id="wifiPort" value="13400" style="max-width:90px"/>
@@ -203,7 +203,9 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
       <div class="row">
         <button id="btnWifiConn" class="green">连接</button>
         <button id="btnWifiDisc" class="ghost">断开</button>
+        <button id="btnWifiScan" class="ghost">🔍 网络自检</button>
       </div>
+      <div class="log" id="wifiScanOut" style="height:130px"></div>
     </section>
     <section class="card">
       <h2>车辆信息与故障码</h2>
@@ -915,6 +917,35 @@ if (wd) wd.onclick = function () { r485('wifiClose', '', null); wifiSt('已断�
 var wi = $('btnWifiInfo'); if (wi) wi.onclick = wifiReadInfo;
 var wt = $('btnWifiDtc'); if (wt) wt.onclick = wifiReadDtc;
 var wcl = $('btnWifiClear'); if (wcl) wcl.onclick = wifiClearDtc;
+var ws = $('btnWifiScan');
+if (ws) ws.onclick = function () {
+  if (typeof r485 !== 'function') { wifiSt('需在 iOS App（TrollStore 安装）内运行'); return; }
+  wifiSt('自检中：读取本机 IP 并探测候选网关…（约 2 秒）');
+  var so = $('wifiScanOut');
+  if (so) so.textContent = '自检中…';
+  r485('wifiSelfCheck', ($('wifiPort').value || '13400'), null);
+};
+window.onWiFiSelfCheck = function (r) {
+  var so = $('wifiScanOut');
+  if (!r) { if (so) so.textContent = '自检无响应'; return; }
+  var lines = [];
+  lines.push('本机 WiFi IP：' + (r.localIP || '无（未连接 WiFi！请先连车辆热点）'));
+  lines.push('探测端口：' + r.port);
+  (r.results || []).forEach(function (x) {
+    lines.push('  ' + x.host + ' → ' + (x.status === 'open' ? '✅ 通' : '✖ ' + x.status));
+  });
+  if (r.found) {
+    $('wifiHost').value = r.found;
+    lines.push('');
+    lines.push('✅ 发现可用诊断网关：' + r.found + '（已自动填入上方，点「连接」）');
+    wifiSt('发现可用网关 ' + r.found + '，已填入，请点「连接」');
+  } else {
+    lines.push('');
+    lines.push('✖ 未发现可用网关：① 确认手机已连车辆热点 ② 车辆需通电且诊断服务开启 ③ 也可试试把网关 IP 手动改为 192.168.0.1');
+    wifiSt('未发现可用网关——请看下方自检详情');
+  }
+  if (so) so.textContent = lines.join('\n');
+};
 
 // ============ 数据流解析 ============
 function evalItem(it, buf, base) {
