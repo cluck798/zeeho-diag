@@ -28,6 +28,8 @@
 	<string>需要通过蓝牙连接诊断模块（I6328A-485 / ESP32-CAN）与车辆通信</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>需要通过蓝牙连接诊断模块与车辆通信</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>需要通过 Wi-Fi 连接车辆热点进行无线诊断（DoIP）</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UIRequiredDeviceCapabilities</key>

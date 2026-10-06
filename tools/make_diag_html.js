@@ -522,6 +522,174 @@ if (vq) vq.onclick = function () {
   r485('vciPaired', '', function (json) { vciShow(json || 'null'); });
 };
 
+// ============ WiFi 直连（DoIP 无线诊断 · 移植自桌面版 protocol.js） ============
+var WD = { conn: false, rxBuf: [], pending: null, hbTimer: null, host: '192.168.49.1', port: 13400 };
+function wBytes(hex) { var r = []; for (var i = 0; i + 1 < hex.length; i += 2) r.push(parseInt(hex.substr(i, 2), 16) & 255); return r; }
+function wHexOf(a) { var s = ''; for (var i = 0; i < a.length; i++) s += (a[i] < 16 ? '0' : '') + a[i].toString(16).toUpperCase(); return s; }
+function wU16(a, o, v) { a[o] = (v >> 8) & 255; a[o + 1] = v & 255; }
+function wAscii(a, start) { var s = ''; for (var i = start; i < a.length; i++) s += String.fromCharCode(a[i] & 255); return s; }
+function wDoip(pt, payload) {
+  var len = payload.length;
+  return [3, 252, (pt >> 8) & 255, pt & 255, (len >>> 24) & 255, (len >>> 16) & 255, (len >>> 8) & 255, len & 255].concat(payload);
+}
+function wRouteAct() { var p = new Array(12).fill(0); wU16(p, 0, 0x0E00); wU16(p, 2, 1); p[4] = 1; wU16(p, 10, 30); return wDoip(5, p); }
+function wAlive() { var p = new Array(12).fill(0); wU16(p, 0, 0x0E00); wU16(p, 2, 1); p[4] = 1; wU16(p, 10, 30); return wDoip(7, p); }
+function wDiagPdu(da, uds) { return wDoip(0x8001, [0x0E, 0x00, (da >> 8) & 255, da & 255].concat(uds)); }
+var WU = {
+  READ_VIN: [3, 34, 0xF1, 0x90],
+  READ_SW: [3, 34, 0xF1, 0x95],
+  READ_PART: [3, 34, 0xF1, 0x87],
+  READ_SUPPLIER: [3, 34, 0xF1, 0x8A],
+  READ_MILEAGE: [3, 34, 0xF2, 0x01],
+  READ_IMEI: [3, 34, 7, 0],
+  DTC: [3, 25, 2, 9],
+  CLEAR: [4, 20, 255, 255, 255]
+};
+function wifiSt(t) { var el = $('wifiStatus'); if (el) el.textContent = t; }
+function wLog(t) { logLine('WIFI', t); }
+function wUdsOf(pdu) { return pdu.slice(16); }
+window.onWifiEvent = function (ev) {
+  if (!ev || !ev.type) return;
+  if (ev.type === 'connected') {
+    WD.conn = true;
+    wifiSt('TCP 已连接 ' + WD.host + ':' + WD.port + '，已发送路由激活');
+    r485('wifiSend', wHexOf(wRouteAct()), null);
+    if (WD.hbTimer) clearInterval(WD.hbTimer);
+    WD.hbTimer = setInterval(function () { if (WD.conn) r485('wifiSend', wHexOf(wAlive()), null); }, 2000);
+  } else if (ev.type === 'recv') {
+    wFeed(wBytes(ev.data));
+  } else if (ev.type === 'closed' || ev.type === 'error') {
+    WD.conn = false;
+    if (WD.hbTimer) { clearInterval(WD.hbTimer); WD.hbTimer = null; }
+    wifiSt('连接断开' + (ev.data ? ('：' + ev.data) : ''));
+  }
+};
+function wFeed(bytes) {
+  WD.rxBuf = WD.rxBuf.concat(bytes);
+  var off = 0;
+  while (off + 8 <= WD.rxBuf.length) {
+    var ver = WD.rxBuf[off];
+    if (ver !== 3 && ver !== 255) { off += 1; continue; }
+    var len = (WD.rxBuf[off + 4] * 16777216) + (WD.rxBuf[off + 5] << 16) + (WD.rxBuf[off + 6] << 8) + WD.rxBuf[off + 7];
+    if (off + 8 + len > WD.rxBuf.length) break;
+    var pdu = WD.rxBuf.slice(off, off + 8 + len);
+    off += 8 + len;
+    wDispatch(pdu);
+  }
+  WD.rxBuf = WD.rxBuf.slice(off);
+}
+function wDispatch(pdu) {
+  var hex = wHexOf(pdu);
+  if (hex.indexOf('03FC8001') === 0 || hex.indexOf('03FC8003') === 0 || hex.indexOf('03FC8002') === 0) {
+    if (WD.pending) {
+      var p = WD.pending; WD.pending = null;
+      clearTimeout(p.timer);
+      p.cb(pdu);
+    }
+  } else {
+    wLog('← ' + hex.slice(0, 40));
+  }
+}
+function wDiagReq(da, uds, cb, timeout) {
+  if (!WD.conn) { cb(null); return; }
+  if (WD.pending) { clearTimeout(WD.pending.timer); WD.pending = null; }
+  var timer = setTimeout(function () { if (WD.pending) { WD.pending = null; cb(null); } }, timeout || 1500);
+  WD.pending = { cb: cb, timer: timer };
+  r485('wifiSend', wHexOf(wDiagPdu(da, uds)), null);
+}
+function wDidAscii(uds, hi, lo) {
+  for (var i = 0; i + 2 < uds.length; i++) {
+    if (uds[i] === 0x62 && uds[i + 1] === hi && uds[i + 2] === lo) return wAscii(uds, i + 3);
+  }
+  return '';
+}
+function wDidUint(uds, hi, lo) {
+  for (var i = 0; i + 2 < uds.length; i++) {
+    if (uds[i] === 0x62 && uds[i + 1] === hi && uds[i + 2] === lo) {
+      var v = 0;
+      for (var j = i + 3; j < uds.length; j++) v = (v << 8) | uds[j];
+      return v;
+    }
+  }
+  return -1;
+}
+function wifiRender(list) {
+  var g = $('wifiGrid'); if (!g) return;
+  var h = '';
+  for (var i = 0; i < list.length; i++) {
+    h += '<div style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px"><div style="font-size:11px;color:var(--muted)">' + list[i][0] + '</div><div style="font-size:14px;font-weight:600;margin-top:2px;word-break:break-all">' + (list[i][1] || '--') + '</div></div>';
+  }
+  g.innerHTML = h;
+}
+function wifiReadInfo() {
+  if (typeof r485 !== 'function') { wifiSt('需在 iOS App 内运行'); return; }
+  if (!WD.conn) { wifiSt('未连接：先把手机连上车辆热点，再点「连接」'); return; }
+  wifiSt('读取车辆信息中…');
+  var seq = [
+    ['VIN', WU.READ_VIN, function (u) { var s = wDidAscii(u, 0xF1, 0x90); return s.length === 17 ? s : ''; }],
+    ['软件版本', WU.READ_SW, function (u) { return wDidAscii(u, 0xF1, 0x95); }],
+    ['零件号', WU.READ_PART, function (u) { return wDidAscii(u, 0xF1, 0x87).replace(/\s+$/, ''); }],
+    ['供应商', WU.READ_SUPPLIER, function (u) { return wDidAscii(u, 0xF1, 0x8A); }],
+    ['总里程(km)', WU.READ_MILEAGE, function (u) { var v = wDidUint(u, 0xF2, 0x01); return v < 0 ? '' : (v / 10).toFixed(1); }],
+    ['IMEI', WU.READ_IMEI, function (u) { return wDidAscii(u, 0x07, 0x00); }]
+  ];
+  var out = [];
+  var idx = 0;
+  function next() {
+    if (idx >= seq.length) { wifiRender(out); wifiSt('车辆信息读取完成'); return; }
+    var it = seq[idx]; idx++;
+    wDiagReq(1, it[1], function (pdu) {
+      var val = '';
+      if (pdu) {
+        val = it[2](wUdsOf(pdu));
+        wLog('← ' + it[0] + ': ' + wHexOf(wUdsOf(pdu)));
+      } else wLog('← ' + it[0] + ': 超时');
+      out.push([it[0], val]);
+      setTimeout(next, 150);
+    }, 1500);
+  }
+  next();
+}
+function wifiReadDtc() {
+  if (!WD.conn) { wifiSt('未连接'); return; }
+  wifiSt('读取故障码中…');
+  wDiagReq(1, WU.DTC, function (pdu) {
+    if (!pdu) { wifiSt('故障码读取超时'); return; }
+    var u = wUdsOf(pdu);
+    wLog('← DTC 原始: ' + wHexOf(u));
+    var dtcs = [];
+    if (u[0] === 0x59 && u[1] === 0x02) {
+      for (var i = 3; i + 3 < u.length; i += 4) dtcs.push(wHexOf(u.slice(i, i + 3)) + ' [' + wHexOf([u[i + 3]]) + ']');
+    }
+    if (dtcs.length) wifiRender(dtcs.map(function (d, i) { return ['DTC' + (i + 1), d]; }));
+    else wifiRender([['故障码', '无（' + wHexOf(u) + '）']]);
+    wifiSt('故障码读取完成：' + (dtcs.length ? dtcs.length + ' 条' : '无'));
+  }, 2500);
+}
+function wifiClearDtc() {
+  if (!WD.conn) { wifiSt('未连接'); return; }
+  if (!confirm('确认清除全部故障码？（请先确保故障已排除）')) return;
+  wifiSt('清除故障码中…');
+  wDiagReq(1, WU.CLEAR, function (pdu) {
+    var r = pdu ? wHexOf(wUdsOf(pdu)) : '';
+    wLog('← 清码: ' + (r || '超时'));
+    wifiSt(pdu ? '清除完成：' + r : '清除超时（ECU 可能未放行）');
+  }, 2500);
+}
+var wc = $('btnWifiConn');
+if (wc) wc.onclick = function () {
+  if (typeof r485 !== 'function') { wifiSt('需在 iOS App（TrollStore 安装）内运行；先连车辆热点'); return; }
+  WD.host = ($('wifiHost').value || '192.168.49.1').trim();
+  WD.port = parseInt($('wifiPort').value || '13400', 10) || 13400;
+  wifiSt('连接中 ' + WD.host + ':' + WD.port + '…（首次会弹本地网络权限）');
+  r485('wifiConnect', WD.host + ':' + WD.port, null);
+};
+var wd = $('btnWifiDisc');
+if (wd) wd.onclick = function () { r485('wifiClose', '', null); wifiSt('已断开'); };
+var wi = $('btnWifiInfo'); if (wi) wi.onclick = wifiReadInfo;
+var wt = $('btnWifiDtc'); if (wt) wt.onclick = wifiReadDtc;
+var wcl = $('btnWifiClear'); if (wcl) wcl.onclick = wifiClearDtc;
+
 // ============ 数据流解析 ============
 function evalItem(it, buf, base) {
   var off = it.o;
@@ -730,6 +898,7 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
       <div class="tile" data-nav="tpms"><div class="tico">🛞</div><div class="tt">胎压传感器</div><div class="ts">匹配 / 读 ID</div></div>
       <div class="tile" data-nav="nfc"><div class="tico">🔑</div><div class="tt">NFC 卡</div><div class="ts">学卡 / 删卡</div></div>
       <div class="tile" data-nav="more"><div class="tico">🧰</div><div class="tt">更多功能</div><div class="ts">初始化 / 整车</div></div>
+      <div class="tile" data-nav="wifi"><div class="tico">📶</div><div class="tt">WiFi 直连</div><div class="ts">车辆信息 / 故障码</div></div>
       <div class="tile" data-nav="adv"><div class="tico">⚙️</div><div class="tt">高级工具</div><div class="ts">原始帧 / 日志</div></div>
     </div>
   </div>
@@ -831,6 +1000,35 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
         <button id="btnSpeTpms">胎压匹配（RS485 通道）</button>
       </div>
       <div class="hint" id="speTip"></div>
+    </section>
+  </div>
+
+  <!-- ===== WiFi 直连 ===== -->
+  <div class="page" id="page-wifi" hidden>
+    <button class="back ghost" data-nav="home">‹ 返回</button>
+    <h2 class="pageh">WiFi 直连（DoIP 无线诊断）</h2>
+    <section class="card">
+      <h2>连接车辆热点</h2>
+      <div class="status" id="wifiStatus">① 先把手机连上车辆热点（ZEEHO- 开头；密码为 VIN 末 8 位）→ ② 点「连接」。首次会弹「本地网络」权限，请选允许。</div>
+      <div class="row">
+        <input id="wifiHost" value="192.168.49.1"/>
+        <input id="wifiPort" value="13400" style="max-width:90px"/>
+      </div>
+      <div class="row">
+        <button id="btnWifiConn" class="green">连接</button>
+        <button id="btnWifiDisc" class="ghost">断开</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>车辆信息与故障码</h2>
+      <button id="btnWifiInfo" class="big green">读取车辆信息</button>
+      <div class="row">
+        <button id="btnWifiDtc" class="ghost">读故障码</button>
+        <button id="btnWifiClear" class="ghost">清除故障码</button>
+      </div>
+      <div class="hint">「清除故障码」为写操作——请先确认故障已排除再执行。</div>
+      <div id="wifiGrid" class="grid"></div>
+      <div class="log udsout"></div>
     </section>
   </div>
 

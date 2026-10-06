@@ -60,6 +60,13 @@ final class ViewController: UIViewController, WKScriptMessageHandler {
             }
         }
 
+        // WiFi(DoIP) 事件 → 网页层
+        WIFIBridge.shared.sink = { [weak self] json in
+            DispatchQueue.main.async {
+                self?.evaluateJS("window.onWifiEvent&&window.onWifiEvent(\(json));")
+            }
+        }
+
         if let url = Bundle.main.url(forResource: "diag", withExtension: "html") {
             webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
         } else {
@@ -104,6 +111,18 @@ final class ViewController: UIViewController, WKScriptMessageHandler {
             reply(VCISPPBridge.toJSON(VCISPPBridge.shared.probe()))
         case "vciPaired":
             reply(VCISPPBridge.toJSON(VCISPPBridge.shared.pairedDevices()))
+        case "wifiConnect":
+            let parts = payload.split(separator: ":")
+            let host = parts.first.map(String.init) ?? "192.168.49.1"
+            let port = parts.count > 1 ? (UInt16(parts[1]) ?? 13400) : 13400
+            WIFIBridge.shared.connect(host: host, port: port)
+            reply(nil)
+        case "wifiSend":
+            let ok = WIFIBridge.shared.send(hex: payload)
+            reply(ok ? "{\"ok\":true}" : "{\"ok\":false}")
+        case "wifiClose":
+            WIFIBridge.shared.close()
+            reply(nil)
         default:
             reply(nil)
         }
