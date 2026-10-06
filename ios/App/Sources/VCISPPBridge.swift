@@ -1,6 +1,7 @@
 // VCISPPBridge.swift — 官方诊断仪（VCI）实验桥：TrollStore 环境下探测/使用 iOS 私有蓝牙框架
 // 背景：官方诊断仪是蓝牙经典（SPP）设备，iOS 公开 API 不可见。
 // 本桥在 TrollStore 平台权限下动态加载私有 BluetoothManager.framework，先探测能力（类/方法），再逐步尝试连接。
+// v2：dlopen 短名/全路径双尝试 + 不依赖 dlopen 的类枚举 + 崩溃防护 + 探测版本标识
 import Foundation
 import ObjectiveC.runtime
 
@@ -13,27 +14,36 @@ final class VCISPPBridge {
 
     // MARK: - ① 探测私有框架（dlopen + 类/方法枚举）
     func probe() -> [String: Any] {
-        var result: [String: Any] = [:]
-        let h = dlopen(Self.fwPath, RTLD_NOW)
-        fwHandle = h
-        result["dlopen"] = (h != nil)
+        var result: [String: Any] = ["probeVersion": 2]
+
+        // 1) dlopen：先短名（共享缓存），再全路径（旧系统），均失败也不中止——类可能已注册可直接取
+        var h = dlopen("BluetoothManager", RTLD_NOW)
+        result["dlopenShort"] = h != nil
         if h == nil {
-            let err = dlerror()
-            result["dlopenError"] = err != nil ? String(cString: err!) : "unknown"
-            return result
+            h = dlopen(Self.fwPath, RTLD_NOW)
+            result["dlopenFullPath"] = h != nil
+        }
+        fwHandle = h
+        if h == nil, let err = dlerror() {
+            result["dlopenError"] = String(cString: err)
         }
 
+        // 2) 类/方法枚举（不依赖 dlopen 成功）
         var classes: [[String: Any]] = []
         for n in ["BluetoothManager", "BluetoothDevice", "BluetoothLocalDevice", "BluetoothXPCClient"] {
             if let cls: AnyClass = NSClassFromString(n) {
-                var methods: [String] = []
+                var info: [String: Any] = ["name": n]
                 var count: UInt32 = 0
+
+                var methods: [String] = []
                 if let list = class_copyMethodList(cls, &count) {
                     for i in 0..<Int(count) {
                         methods.append(NSStringFromSelector(method_getName(list[i])))
                     }
                     free(list)
                 }
+                info["instanceMethodCount"] = methods.count
+
                 var classMethods: [String] = []
                 if let meta = object_getClass(cls), let mlist = class_copyMethodList(meta, &count) {
                     for i in 0..<Int(count) {
@@ -41,14 +51,14 @@ final class VCISPPBridge {
                     }
                     free(mlist)
                 }
+                info["classMethodCount"] = classMethods.count
+
                 let kw = ["RFCOMM", "rfcomm", "SPP", "spp", "L2CAP", "l2cap", "hannel", "onnect", "evice", "air", "pen", "can"]
-                let key = methods.filter { m in kw.contains { m.contains($0) } }
-                classes.append([
-                    "name": n,
-                    "instanceMethods": methods.sorted(),
-                    "classMethods": classMethods.sorted(),
-                    "keyMethods": key.sorted()
-                ])
+                info["keyMethods"] = methods.filter { m in kw.contains { m.contains($0) } }.sorted()
+                info["keyClassMethods"] = classMethods.filter { m in kw.contains { m.contains($0) } }.sorted()
+                info["instanceMethods"] = methods.sorted()
+                info["classMethods"] = classMethods.sorted()
+                classes.append(info)
             } else {
                 classes.append(["name": n, "missing": true])
             }
@@ -57,14 +67,17 @@ final class VCISPPBridge {
         return result
     }
 
-    // MARK: - ② 列出已配对 / 已知设备
+    // MARK: - ② 列出已配对 / 已知设备（防崩溃：先检查方法存在性）
     func pairedDevices() -> [String: Any] {
         guard let cls: AnyClass = NSClassFromString("BluetoothManager") else {
-            return ["error": "BluetoothManager 类不存在（先点①探测）"]
+            return ["error": "BluetoothManager 类不存在（先点①探测；若①中 dlopen/类均失败，则为系统不支持）"]
         }
         let sharedSel = NSSelectorFromString("sharedInstance")
+        guard let meta = object_getClass(cls), class_respondsToSelector(meta, sharedSel) else {
+            return ["error": "无 sharedInstance 类方法（见①的方法列表）"]
+        }
         guard let mgr = (cls as AnyObject).perform(sharedSel)?.takeUnretainedValue() else {
-            return ["error": "sharedInstance 调用失败"]
+            return ["error": "sharedInstance 返回空"]
         }
         for selName in ["pairedDevices", "connectedDevices", "devices"] {
             let sel = NSSelectorFromString(selName)

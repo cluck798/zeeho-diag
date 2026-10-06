@@ -505,7 +505,9 @@ if (bc) bc.onclick = function () {
 // ============ 官方诊断仪（实验）检测 ============
 function vciShow(t) {
   var o = document.getElementById('vciOut');
-  if (o) { o.textContent = t; o.scrollTop = 0; }
+  if (!o) return;
+  o.textContent = (typeof t === 'string') ? t : JSON.stringify(t, null, 2);
+  o.scrollTop = 0;
 }
 var vp = $('btnVciProbe');
 if (vp) vp.onclick = function () {
@@ -852,7 +854,7 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
         <button id="btnVciProbe" class="ghost">① 检测私有框架</button>
         <button id="btnVciPaired" class="ghost">② 列出已配对设备</button>
       </div>
-      <div class="hint">官方诊断仪为蓝牙经典（SPP）设备。先点①：将检测 iOS 私有蓝牙框架能否加载、是否含 RFCOMM/通道相关方法；再点②列出系统已配对设备（诊断仪应出现在其中）。把结果发给开发者即可。</div>
+      <div class="hint">官方诊断仪为蓝牙经典（SPP）设备。先点①：将检测 iOS 私有蓝牙框架能否加载、是否含 RFCOMM/通道相关方法；再点②列出系统已配对设备（诊断仪应出现在其中）。把结果发给开发者即可。<b>【实验版本 v2——若看不到 v2 字样说明 App 未更新】</b></div>
       <div class="log" id="vciOut" style="height:170px"></div>
     </section>
     <section class="card">
