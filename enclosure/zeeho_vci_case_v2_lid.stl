@@ -1,0 +1,170 @@
+solid zeeho_vci_case_v2_lid
+  facet normal 0 0 -1
+    outer loop
+      vertex 0 0 0
+      vertex 35.06 18.62 0
+      vertex 35.06 0 0
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 0 0 0
+      vertex 0 18.62 0
+      vertex 35.06 18.62 0
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 0 0 1.6
+      vertex 35.06 0 1.6
+      vertex 35.06 18.62 1.6
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 0 0 1.6
+      vertex 35.06 18.62 1.6
+      vertex 0 18.62 1.6
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex 0 0 0
+      vertex 35.06 0 0
+      vertex 35.06 0 1.6
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex 0 0 0
+      vertex 35.06 0 1.6
+      vertex 0 0 1.6
+    endloop
+  endfacet
+  facet normal 0 1 0
+    outer loop
+      vertex 0 18.62 0
+      vertex 0 18.62 1.6
+      vertex 35.06 18.62 1.6
+    endloop
+  endfacet
+  facet normal 0 1 0
+    outer loop
+      vertex 0 18.62 0
+      vertex 35.06 18.62 1.6
+      vertex 35.06 18.62 0
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 0 0 1.6
+      vertex 0 18.62 1.6
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 0 0 0
+      vertex 0 18.62 1.6
+      vertex 0 18.62 0
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 35.06 0 0
+      vertex 35.06 18.62 0
+      vertex 35.06 18.62 1.6
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 35.06 0 0
+      vertex 35.06 18.62 1.6
+      vertex 35.06 0 1.6
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 1.8 1.8 1.6
+      vertex 33.26 16.82 1.6
+      vertex 33.26 1.8 1.6
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 1.8 1.8 1.6
+      vertex 1.8 16.82 1.6
+      vertex 33.26 16.82 1.6
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 1.8 1.8 3.8000000000000003
+      vertex 33.26 1.8 3.8000000000000003
+      vertex 33.26 16.82 3.8000000000000003
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 1.8 1.8 3.8000000000000003
+      vertex 33.26 16.82 3.8000000000000003
+      vertex 1.8 16.82 3.8000000000000003
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex 1.8 1.8 1.6
+      vertex 33.26 1.8 1.6
+      vertex 33.26 1.8 3.8000000000000003
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex 1.8 1.8 1.6
+      vertex 33.26 1.8 3.8000000000000003
+      vertex 1.8 1.8 3.8000000000000003
+    endloop
+  endfacet
+  facet normal 0 1 0
+    outer loop
+      vertex 1.8 16.82 1.6
+      vertex 1.8 16.82 3.8000000000000003
+      vertex 33.26 16.82 3.8000000000000003
+    endloop
+  endfacet
+  facet normal 0 1 0
+    outer loop
+      vertex 1.8 16.82 1.6
+      vertex 33.26 16.82 3.8000000000000003
+      vertex 33.26 16.82 1.6
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 1.8 1.8 1.6
+      vertex 1.8 1.8 3.8000000000000003
+      vertex 1.8 16.82 3.8000000000000003
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 1.8 1.8 1.6
+      vertex 1.8 16.82 3.8000000000000003
+      vertex 1.8 16.82 1.6
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 33.26 1.8 1.6
+      vertex 33.26 16.82 1.6
+      vertex 33.26 16.82 3.8000000000000003
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 33.26 1.8 1.6
+      vertex 33.26 16.82 3.8000000000000003
+      vertex 33.26 1.8 3.8000000000000003
+    endloop
+  endfacet
+endsolid zeeho_vci_case_v2_lid
