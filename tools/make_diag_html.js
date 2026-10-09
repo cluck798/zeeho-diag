@@ -131,6 +131,7 @@ window.onR485Event = function (json) {
     $('blePill').textContent = '已连接' + (ev.name ? ' ' + ev.name : '') + '（' + (linkMode === 'can' ? 'CAN' : 'RS485') + '）';
     $('blePill').className = 'pill ok';
     logLine('SYS', '已连接 ' + (ev.name || '') + '，链路模式：' + (linkMode === 'can' ? 'CAN' : 'RS485'));
+    var dm0 = $('dashMsg'); if (dm0) dm0.textContent = '已连接' + (ev.name ? ' ' + ev.name : '') + '，点上排按钮读取数据';
   } else if (ev.type === 'ready') {
     $('svcInfo').textContent = ev.ok ? ('写: ' + ev.write + '  通知: ' + ev.notify) : '未找到可写/通知特征';
     $('svcInfo').className = 'hint ' + (ev.ok ? '' : 'err');
@@ -782,24 +783,32 @@ function parseBuffer(hex, sysHex) {
 }
 
 function autoParse(hex) {
-  // 对每个已知系统尝试解析，命中标记数量最多的系统
-  var best = null, bestCount = 0;
+  // 命中标记的系统全部解析并缓存（仪表盘可跨系统取数）
+  var buf = hex2bytes(hex);
+  var found = [];
   Object.keys(SYS).forEach(function (sys) {
-    var buf = hex2bytes(hex);
-    var base = findMarker(buf, sys);
-    if (base < 0) return;
-    var cnt = ITEMS.filter(function (i) { return i.s === sys; }).length;
-    if (cnt > bestCount) { best = sys; bestCount = cnt; }
+    if (findMarker(buf, sys) < 0) return;
+    var r = parseBuffer(hex, sys);
+    if (r) { DASH_DATA[sys] = r; found.push(sys); }
   });
-  if (best) {
+  if (found.length) {
+    // 列表展示：选内置项最多的系统
+    var best = found[0];
+    found.forEach(function (sys) {
+      if (ITEMS.filter(function (i) { return i.s === sys; }).length > ITEMS.filter(function (i) { return i.s === best; }).length) best = sys;
+    });
     $('pSys').value = best;
-    var r = parseBuffer(hex, best);
-    if (r) {
-      lastParsed = r;
-      renderItems(best, r);
-      var dst = $('dataStatus');
-      if (dst) dst.textContent = '已解析：' + best + ' ' + (SYS[best] || '') + ' · ' + Object.keys(r).length + ' 项数据';
-      logLine('SYS', '已按系统 ' + best + ' 解析 ' + Object.keys(r).length + ' 项');
+    lastParsed = DASH_DATA[best];
+    renderItems(best, lastParsed);
+    var dst = $('dataStatus');
+    if (dst) dst.textContent = '已解析：' + best + ' ' + (SYS[best] || '') + ' · ' + Object.keys(lastParsed).length + ' 项数据';
+    logLine('SYS', '已按系统 ' + best + ' 解析 ' + Object.keys(lastParsed).length + ' 项');
+    renderDash();
+    if (DASH[DASH_VIEW] && DASH[DASH_VIEW].syses.indexOf(best) >= 0) {
+      var now = new Date();
+      var hh = ('0' + now.getHours()).slice(-2), mm = ('0' + now.getMinutes()).slice(-2), ss = ('0' + now.getSeconds()).slice(-2);
+      dashSt('已更新 · ' + hh + ':' + mm + ':' + ss + '（系统 ' + best + '）');
+      var ts = $('dashTs'); if (ts) ts.textContent = '更新 ' + hh + ':' + mm + ':' + ss;
     }
   } else {
     // VIN 尝试
@@ -839,6 +848,125 @@ $('btnParse').onclick = function () {
 };
 
 $('btnClr').onclick = function () { $('log').innerHTML = ''; buffers = []; };
+
+// ============ 仪表盘（横屏「看数据流」） ============
+var DASH_DATA = {};   // sys -> { 名称: {v,u,f} }
+var DASH_VIEW = 'car';
+var DASH = {
+  car: {
+    syses: ['59', '51', '81'],
+    gauge: { name: '显示车速', unit: 'km/h', max: 100, fixed: 0, scale: 1 },
+    ticks: ['0', '20', '40', '60', '80', '100'],
+    tiles: [
+      { label: '电量', name: '电池电量百分比', fixed: 0, unit: '%' },
+      { label: '电压', name: '电池总电压', fixed: 1, unit: 'V' },
+      { label: '剩余能量', name: '电池剩余能量', fixed: 0, unit: 'Wh' },
+      { label: '总里程', name: '里程', fixed: 1, unit: 'km' },
+      { label: '实时功率', name: '实时功率', fixed: 0, unit: 'W' },
+      { label: '速度模式', name: '电机速度模式', fixed: -1, unit: '' },
+      { label: '电机温度', name: '电机温度', fixed: 0, unit: '℃' },
+      { label: '控制器温度', name: '电机控制器温度', fixed: 0, unit: '℃' },
+      { label: '电池最高温', name: '电池单体最高温度', fixed: 0, unit: '℃' }
+    ]
+  },
+  batt: {
+    syses: ['51'],
+    gauge: { name: '电池电量百分比', unit: '%', max: 100, fixed: 0, scale: 1 },
+    ticks: ['0', '20', '40', '60', '80', '100'],
+    tiles: [
+      { label: '总电压', name: '电池总电压', fixed: 1, unit: 'V' },
+      { label: '总电流', name: '电池总电流', fixed: 1, unit: 'A' },
+      { label: '剩余能量', name: '电池剩余能量', fixed: 0, unit: 'Wh' },
+      { label: '健康度', name: '电池健康度', fixed: 0, unit: '%' },
+      { label: '循环次数', name: '电池循环次数', fixed: 0, unit: '次' },
+      { label: '单体最高温', name: '电池单体最高温度', fixed: 0, unit: '℃' },
+      { label: '单体最低温', name: '电池单体最低温度', fixed: 0, unit: '℃' },
+      { label: '充电状态', name: '电池充电状态', fixed: -1, unit: '' },
+      { label: '故障等级', name: 'BMS系统故障等级', fixed: -1, unit: '' }
+    ]
+  },
+  motor: {
+    syses: ['59'],
+    gauge: { name: '实时功率', unit: 'kW', max: 3, fixed: 1, scale: 0.001 },
+    ticks: ['0', '0.6', '1.2', '1.8', '2.4', '3.0'],
+    tiles: [
+      { label: '母线电压', name: '母线电压', fixed: 1, unit: 'V' },
+      { label: '母线电流', name: '母线电流', fixed: 1, unit: 'A' },
+      { label: '转把电压', name: '转把电压', fixed: 2, unit: 'V' },
+      { label: '控制器温度', name: '电机控制器温度', fixed: 0, unit: '℃' },
+      { label: '电机温度', name: '电机温度', fixed: 0, unit: '℃' },
+      { label: 'U相电流', name: 'U相电流', fixed: 1, unit: 'A' },
+      { label: 'V相电流', name: 'V相电流', fixed: 1, unit: 'A' },
+      { label: 'W相电流', name: 'W相电流', fixed: 1, unit: 'A' },
+      { label: '能量回收', name: '能量回收状态', fixed: -1, unit: '' }
+    ]
+  }
+};
+var DASH_L = 460.8, DASH_CX = 180, DASH_CY = 190, DASH_R = 110;
+function dashFind(name) {
+  var view = DASH[DASH_VIEW];
+  if (!view) return null;
+  for (var i = 0; i < view.syses.length; i++) {
+    var r = DASH_DATA[view.syses[i]];
+    if (r && r[name] != null) return r[name];
+  }
+  return null;
+}
+function dashFmt(t, e) {
+  if (!e || e.v === null || e.v === undefined) return '—';
+  var v = e.v;
+  if (typeof v !== 'number') return String(v);
+  if (t.fixed < 0) return String(v);
+  return v.toFixed(t.fixed);
+}
+function renderDash() {
+  var view = DASH[DASH_VIEW];
+  if (!view || !$('dashVal')) return;
+  var g = dashFind(view.gauge.name);
+  var gv = (g && typeof g.v === 'number') ? g.v * view.gauge.scale : null;
+  $('dashVal').textContent = gv === null ? '—' : gv.toFixed(view.gauge.fixed);
+  $('dashUnit').textContent = (g && g.u) ? g.u : view.gauge.unit;
+  var pct = gv === null ? 0 : Math.max(0, Math.min(1, gv / view.gauge.max));
+  $('dashProg').setAttribute('stroke-dashoffset', (DASH_L * (1 - pct)).toFixed(1));
+  var ang = -120 + pct * 240, rad = ang * Math.PI / 180;
+  $('dashPnt').setAttribute('cx', (DASH_CX + DASH_R * Math.sin(rad)).toFixed(1));
+  $('dashPnt').setAttribute('cy', (DASH_CY - DASH_R * Math.cos(rad)).toFixed(1));
+  for (var i = 0; i < 6; i++) { var tk = $('dtk' + i); if (tk) tk.textContent = view.ticks[i]; }
+  var tl = $('dashTiles');
+  tl.innerHTML = '';
+  view.tiles.forEach(function (t) {
+    var e = dashFind(t.name);
+    var d = document.createElement('div');
+    d.className = 'dtile' + (e ? '' : ' fail');
+    d.innerHTML = '<div class="tn">' + t.label + '</div><div class="tv">' + dashFmt(t, e) + '<small>' + (t.unit || '') + '</small></div>';
+    tl.appendChild(d);
+  });
+}
+function dashSt(msg) { var el = $('dashMsg'); if (el) el.textContent = msg; }
+function dashRead() {
+  var view = DASH[DASH_VIEW];
+  if (!view) return;
+  if (typeof connected === 'undefined' || !connected) { dashSt('未连接模块——先到「蓝牙连接」页连接 485 模块'); return; }
+  var i = 0;
+  dashSt('读取中：' + view.syses.join(' / ') + ' …');
+  function next() {
+    if (i >= view.syses.length) { dashSt('读取命令已发送，等待响应…'); return; }
+    sendFrame(buildFrame(view.syses[i], ''));
+    i++;
+    setTimeout(next, 400);
+  }
+  next();
+}
+Array.prototype.forEach.call(document.querySelectorAll('[data-dash]'), function (btn) {
+  btn.onclick = function () {
+    DASH_VIEW = btn.getAttribute('data-dash');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-dash]'), function (b) { b.className = 'dchip' + (b === btn ? ' on' : ''); });
+    renderDash();
+    dashRead();
+  };
+});
+var bdr = $('btnDashRead'); if (bdr) bdr.onclick = dashRead;
+renderDash();
 
 // 初始化
 Object.keys(SYS).forEach(function (s) {
@@ -898,6 +1026,34 @@ input{flex:1;min-width:110px;}
 .ds .n{color:var(--muted);font-size:12px;}
 .ds .v{font-size:17px;font-family:ui-monospace,Menlo,Consolas,monospace;margin-top:2px;}
 .ds .v small{font-size:11px;color:var(--muted);margin-left:3px;}
+.dash{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;}
+.dbar{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;}
+.ddot{width:8px;height:8px;border-radius:999px;background:var(--ok);}
+.dsp{flex:1;}
+.dchips{display:flex;gap:8px;flex-wrap:wrap;}
+.dchip{padding:7px 16px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;min-height:34px;}
+.dchip.on{background:var(--ok);border-color:var(--ok);color:#06331b;font-weight:600;}
+.dchip.dghost{color:var(--text);background:var(--panel2);}
+.dmain{display:flex;gap:12px;align-items:center;}
+.dgauge{flex:0 1 320px;min-width:220px;}
+.dgauge svg{display:block;width:100%;height:auto;}
+.dtiles{flex:1 1 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-content:start;}
+.dtile{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;}
+.dtile .tn{color:var(--muted);font-size:11px;}
+.dtile .tv{font-size:16px;font-family:ui-monospace,Menlo,Consolas,monospace;margin-top:1px;}
+.dtile .tv small{font-size:11px;color:var(--muted);margin-left:3px;}
+.dtile.fail .tv{color:var(--muted);}
+.drot{display:none;color:var(--muted);font-size:12px;text-align:center;}
+.dstat{color:var(--muted);font-size:12px;word-break:break-all;}
+.gtrk{fill:none;stroke:#1e2a3d;stroke-width:14;stroke-linecap:round;}
+.gval{fill:none;stroke:var(--ok);stroke-width:14;stroke-linecap:round;transition:stroke-dashoffset .18s ease-out;}
+.gpt{fill:var(--ok);stroke:var(--bg);stroke-width:3;transition:cx .18s ease-out,cy .18s ease-out;}
+.gbig{fill:var(--text);font-size:22px;font-weight:600;font-family:ui-monospace,Menlo,Consolas,monospace;}
+.gsm{fill:var(--muted);font-size:11px;}
+.gtick{fill:var(--muted);font-size:11px;font-family:ui-monospace,Menlo,Consolas,monospace;}
+details.card summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--text);}
+@media (orientation:portrait){.drot{display:block;}}
+@media (max-width:560px){.dmain{flex-direction:column;align-items:stretch;}.dgauge{flex:none;width:100%;max-width:360px;margin:0 auto;}}
 .ds.fail{opacity:.4;}
 .log{background:#080c12;border:1px solid var(--border);border-radius:8px;padding:8px;height:200px;overflow:auto;font:11px/1.65 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;}
 .presets button{padding:6px 10px;font-size:12px;}
@@ -943,7 +1099,7 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
       <div class="hint">找不到「官方诊断仪」？它是蓝牙经典（SPP）设备，BLE 扫描永远看不到——请在 iPhone「设置 → 蓝牙」中配对查看。本 App 支持的是 BLE 透传模块（I6328A-485 / ESP32-CAN）。</div>
     </section>
     <div class="tiles">
-      <div class="tile" data-nav="data"><div class="tico">📊</div><div class="tt">看数据流</div><div class="ts">电池 / 电机 / 仪表</div></div>
+      <div class="tile" data-nav="data"><div class="tico">📊</div><div class="tt">看数据流</div><div class="ts">横屏仪表盘</div></div>
       <div class="tile" data-nav="abs"><div class="tico">🛑</div><div class="tt">ABS 排气</div><div class="ts">换刹车油、排空气</div></div>
       <div class="tile" data-nav="tpms"><div class="tico">🛞</div><div class="tt">胎压传感器</div><div class="ts">匹配 / 读 ID</div></div>
       <div class="tile" data-nav="nfc"><div class="tico">🔑</div><div class="tt">NFC 卡</div><div class="ts">学卡 / 删卡</div></div>
@@ -953,13 +1109,42 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
     </div>
   </div>
 
-  <!-- ===== 看数据流 ===== -->
+  <!-- ===== 看数据流（横屏仪表盘） ===== -->
   <div class="page" id="page-data" hidden>
     <button class="back ghost" data-nav="home">‹ 返回</button>
     <h2 class="pageh">看数据流</h2>
-    <section class="card">
-      <h2>选一类数据，点一下自动读取</h2>
-      <div class="chips">
+    <div class="dash">
+      <div class="dbar"><span class="ddot"></span>485 线路<span class="dsp"></span><span id="dashTs">等待数据</span></div>
+      <div class="dchips">
+        <button class="dchip on" data-dash="car">整车</button>
+        <button class="dchip" data-dash="batt">电池</button>
+        <button class="dchip" data-dash="motor">电机</button>
+        <button class="dchip dghost" id="btnDashRead">↻ 读取</button>
+      </div>
+      <div class="dmain">
+        <div class="dgauge">
+          <svg viewBox="0 0 360 268" aria-label="数据仪表盘">
+            <path class="gtrk" d="M 84.7 245 A 110 110 0 1 1 275.3 245"></path>
+            <path class="gval" id="dashProg" d="M 84.7 245 A 110 110 0 1 1 275.3 245" stroke-dasharray="460.8" stroke-dashoffset="460.8"></path>
+            <circle class="gpt" id="dashPnt" cx="84.7" cy="245" r="7"></circle>
+            <text class="gbig" id="dashVal" x="180" y="176" text-anchor="middle">—</text>
+            <text class="gsm" id="dashUnit" x="180" y="198" text-anchor="middle">km/h</text>
+            <text class="gtick" id="dtk0" x="66" y="259" text-anchor="middle">0</text>
+            <text class="gtick" id="dtk1" x="54.5" y="153" text-anchor="middle">20</text>
+            <text class="gtick" id="dtk2" x="126.3" y="73" text-anchor="middle">40</text>
+            <text class="gtick" id="dtk3" x="233.7" y="73" text-anchor="middle">60</text>
+            <text class="gtick" id="dtk4" x="305.5" y="153" text-anchor="middle">80</text>
+            <text class="gtick" id="dtk5" x="294.3" y="259" text-anchor="middle">100</text>
+          </svg>
+        </div>
+        <div class="dtiles" id="dashTiles"></div>
+      </div>
+      <div class="drot">🔄 手机横屏查看，数据更齐全</div>
+      <div class="dstat" id="dashMsg">点「整车 / 电池 / 电机」自动发送读取命令（需先在「蓝牙连接」页连好模块）</div>
+    </div>
+    <details class="card">
+      <summary>全部数据项列表 / 手动读取（含读 VIN）</summary>
+      <div class="chips" style="margin:8px 0">
         <button class="chip" data-sys="51">🔋 电池</button>
         <button class="chip" data-sys="59">⚡ 电机</button>
         <button class="chip" data-sys="81">🧭 仪表整车</button>
@@ -968,13 +1153,13 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
         <button class="chip" data-sys="8B">📶 后雷达</button>
         <button class="chip" id="btnVin">🔍 读 VIN</button>
       </div>
-      <div class="status" id="dataStatus">选择后自动发送读取命令并解析；若数值大多显示"—"，到「高级工具」调整读取帧后再试。</div>
+      <div class="status" id="dataStatus">若数值大多显示"—"，检查读取帧或到「高级工具」手动调整。</div>
       <div id="dsGrid" class="grid"></div>
       <div class="row">
         <select id="pSys" style="display:none"></select>
         <button id="btnParse" class="ghost">重新解析最近响应</button>
       </div>
-    </section>
+    </details>
   </div>
 
   <!-- ===== ABS 排气 ===== -->

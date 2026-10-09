@@ -9,8 +9,9 @@
  *   ESP32 GPIO4  <- 收发器 CRX/RXD  （CAN_RX）
  *   收发器 3V3   -> ESP32 3.3V
  *   收发器 GND   -> ESP32 GND（并与车辆诊断口 GND 相连，共地）
- *   收发器 CANH  -> 车辆诊断口 pin 6
- *   收发器 CANL  -> 车辆诊断口 pin 14
+ *   收发器 CANH  -> 车辆诊断口 CAN-H（AE5 六位口 B 脚 / AE4+ 八位口 B 脚，线色 BR/O）
+ *   收发器 CANL  -> 车辆诊断口 CAN-L（AE5 六位口 E 脚 / AE4+ 八位口 F 脚，线色 BR/G）
+ *   （车载供电）诊断口 12V电源(A 脚) → 12V→5V 降压 → ESP32 5V；切勿把 12V 直接接 5V 引脚
  *   若用 TJA1050：需 5V 供电，且 RXD 输出为 5V 电平，
  *   必须在 RXD->GPIO4 之间加分压（如 10k/20k）或电平转换，否则会打坏 ESP32！
  *
