@@ -9,6 +9,7 @@
 | 目录 | 说明 |
 | --- | --- |
 | `ios/` | **iOS 诊断 App**（独立工程，XcodeGen 构建；TrollStore 安装。首页功能格：看数据流（横屏仪表盘）/ ABS 排气 / 胎压传感器 / NFC 卡 / 高级工具；支持横屏） |
+| `android/` | **Android BLE 诊断 App**（原生 BLE 扫描/GATT + 复用 `ios/App/Resources/diag.html` 诊断界面；适配 I6328A-485 与 ESP32-CAN，WiFi/DoIP 暂不支持） |
 | `esp32/` | **ESP32 BLE↔CAN 桥固件**（Arduino；GPIO5/4 接 SN65HVD230 收发器，CANH/L 接诊断口 CAN-H/CAN-L——AE5 六位口 B/E 脚、AE4+ 八位口 B/F 脚，500K。BLE 名 `ZEEHO-CAN`，UUID 同商用 6328 模块） |
 | `tools/` | `diag.html` 生成器（`make_diag_html.js` + 数据 `rs485_items.json`），改 UI/数据后重新生成到 `ios/App/Resources/diag.html` |
 | `enclosure/` | 外壳（`node make_case_stl.js` 普通保护壳；`make_case_stl_v2.js` 直插式；**`make_case_stl_v3.js [obd16\|type2\|type3]` U 盘款**——插件式主体 + 盖 + 防护帽，配 SVG 结构预览）|
@@ -28,3 +29,7 @@
 ## iOS 构建
 
 推送 `ios/**` 改动到 `main` 即触发 GitHub Actions 构建，产物发布到 Release `diag-latest`（未签名 IPA，TrollStore 直接安装）。
+
+## Android 构建与安装
+
+安装 Android SDK（API 35）及 JDK 17 后，在 `android/` 运行 `gradle assembleDebug`；APK 输出到 `android/app/build/outputs/apk/debug/app-debug.apk`。用 `adb install -r android/app/build/outputs/apk/debug/app-debug.apk` 安装。Android 12+ 首次启动需授予“附近设备”蓝牙权限。App 支持 BLE 透传诊断；官方经典蓝牙 SPP 诊断仪、WiFi/DoIP 功能不受支持。
