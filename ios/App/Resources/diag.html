@@ -85,7 +85,6 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
 </head>
 <body>
 <header>
-  <button id="btnBack" class="ghost">‹ 面板</button>
   <h1>无线诊断</h1>
   <span id="blePill" class="pill">蓝牙未知</span>
 </header>
@@ -438,8 +437,14 @@ window.onR485Event = function (json) {
     $('blePill').textContent = '已断开';
     $('blePill').className = 'pill err';
     logLine('SYS', 'disconnected ' + (ev.error || ''));
+  } else if (ev.type === 'scanStarted') {
+    var sp = $('blePill'); if (sp && !connected) { sp.textContent = '扫描中…'; sp.className = 'pill'; }
+    var si = $('svcInfo'); if (si && !connected) si.textContent = '正在扫描附近蓝牙设备，结果会出现在上方列表…';
+  } else if (ev.type === 'scanStopped') {
+    if (!connected) { var pp = $('blePill'); if (pp && pp.textContent === '扫描中…') pp.textContent = '已停止扫描'; }
   } else if (ev.type === 'error') {
     logLine('SYS', 'ERROR: ' + ev.error);
+    var ep = $('blePill'); if (ep) { ep.textContent = '出错：' + ev.error; ep.className = 'pill err'; }
   } else if (ev.type === 'notifyState') {
     logLine('SYS', '通知订阅 ' + ev.uuid.slice(0, 8) + ' = ' + ev.on);
   }
@@ -462,7 +467,6 @@ function renderDevices() {
 }
 
 // ============ 按钮 ============
-$('btnBack').onclick = function () { r485('openPanel', '', null); };
 $('btnScan').onclick = function () { devices = {}; renderDevices(); r485('scan', $('flt').value.trim(), null); };
 $('btnStop').onclick = function () { r485('stopScan', '', null); };
 $('btnDis').onclick = function () { r485('disconnect', '', null); };
@@ -1130,7 +1134,7 @@ $('btnParse').onclick = function () {
   var sys = $('pSys').value;
   for (var i = 0; i < buffers.length; i++) {
     var r = parseBuffer(buffers[i].hex, sys);
-    if (r) { lastParsed = r; renderItems(sys, r); logLine('SYS', '解析系统 ' + sys + '（' + r && Object.keys(r).length + ' 项）来自最近响应#' + (i + 1)); return; }
+    if (r) { lastParsed = r; renderItems(sys, r); logLine('SYS', '解析系统 ' + sys + '（' + Object.keys(r).length + ' 项）来自最近响应#' + (i + 1)); return; }
   }
   logLine('SYS', '未在最近 ' + buffers.length + ' 条响应中找到系统 ' + sys + ' 的标记（' + sys + '40）');
 };
@@ -1267,6 +1271,17 @@ renderItems($('pSys').value);
 applyMode();
 showPage('home');
 logLine('SYS', '无线诊断已就绪：先「一键连接」，再选择需要的功能');
+window.__diagReady = 1;
+// 自检：确认原生桥存在并主动查询蓝牙适配器状态（权限/开关问题一眼可见）
+if (typeof r485 === 'function') {
+  r485('state', '', function (j) {
+    if (j) { try { window.onR485Event(j); } catch (e) {} }
+    else { var p = $('blePill'); if (p) { p.textContent = '桥接无响应'; p.className = 'pill err'; } logLine('SYS', '警告：原生桥无响应（messageHandlers.rs485 未注册？）'); }
+  });
+} else {
+  var bp = $('blePill'); if (bp) { bp.textContent = '原生桥未注入'; bp.className = 'pill err'; }
+  logLine('SYS', '警告：window.r485 不存在——需在 iOS App 内运行，蓝牙/WiFi 功能不可用');
+}
 
 </script>
 </body>
