@@ -70,6 +70,15 @@ var r485 = window.r485 || function (cmd, data, cb) {
   if (!window.webkit || !window.webkit.messageHandlers.rs485) { if (cb) cb(null); return; }
   window.webkit.messageHandlers.rs485.postMessage({ command: cmd, data: data || '', id: id });
 };
+// 页面自己兜底定义桥回调/事件：iOS 注入脚本要到 documentEnd 才运行，
+// 若启动自检的 state 回包先到，注入版 __r485Cb 尚未定义会让回包被静默丢弃
+// （表现为右上角药丸一直停在「蓝牙未知」）。注入脚本稍后覆盖，逻辑一致，无副作用。
+if (!window.__r485Cb) window.__r485Cb = function (id, json) {
+  try { var cb = (window.__r485Cbs || {})[id]; if (cb) { delete window.__r485Cbs[id]; cb(json); } } catch (e) {}
+};
+if (!window.__r485Event) window.__r485Event = function (json) {
+  try { if (window.onR485Event) window.onR485Event(json); } catch (e) {}
+};
 
 // ============ 状态 ============
 var devices = {};
@@ -719,7 +728,12 @@ window.onWiFiSelfCheck = function (r) {
     wifiSt('发现可用网关 ' + r.found + '，已填入，请点「连接」');
   } else {
     lines.push('');
-    lines.push('✖ 未发现可用网关：① 确认手机已连车辆热点 ② 车辆需通电且诊断服务开启 ③ 也可试试把网关 IP 手动改为 192.168.0.1');
+    lines.push('✖ 未发现可用诊断网关（车辆诊断网关固定为 192.168.49.1:13400）');
+    if (!r.localIP || r.localIP.indexOf('192.168.49.') !== 0) {
+      lines.push('⚠ 本机 WiFi IP 不在 192.168.49.x 网段 → 当前多半不是车辆诊断热点，请重连车辆诊断热点后再试');
+    } else {
+      lines.push('① 车辆需通电且诊断服务已开启 ② 关闭「无线局域网助理」防止被切走 ③ 稍后重试');
+    }
     wifiSt('未发现可用网关——请看下方自检详情');
   }
   if (so) so.textContent = lines.join('\\n');
@@ -727,7 +741,7 @@ window.onWiFiSelfCheck = function (r) {
 var wps = $('btnWifiPortScan');
 if (wps) wps.onclick = function () {
   if (typeof r485 !== 'function') { wifiSt('需在 iOS App（TrollStore 安装）内运行'); return; }
-  var h = ($('wifiHost').value || '192.168.0.1').trim();
+  var h = ($('wifiHost').value || '192.168.49.1').trim();
   wifiSt('端口扫描 ' + h + ' …（约 2 秒）');
   var so = $('wifiScanOut'); if (so) so.textContent = '端口扫描 ' + h + ' 中…';
   r485('wifiPortScan', h, null);
@@ -736,11 +750,12 @@ window.onWifiPortScan = function (r) {
   var so = $('wifiScanOut');
   if (!r) { if (so) so.textContent = '端口扫描无响应'; return; }
   var open = r.open || [];
+  var NOTE = { '10950': '（车机 OTA 推送通道，非诊断口）', '13400': '（DoIP 诊断口）' };
   var lines = ['端口扫描 ' + r.host + '：'];
   (r.results || []).forEach(function (x) {
-    lines.push('  ' + x.port + ' → ' + (x.status === 'open' ? '✅ 开放' : (x.status === 'fail' ? '✖ 关闭' : '✖ 超时')));
+    lines.push('  ' + x.port + ' → ' + (x.status === 'open' ? '✅ 开放' : (x.status === 'fail' ? '✖ 关闭' : '✖ 超时')) + (x.status === 'open' ? (NOTE[x.port] || '') : ''));
   });
-  lines.push(open.length ? ('✅ 开放端口：' + open.join(', ')) : '✖ 未发现开放端口');
+  lines.push(open.indexOf('13400') >= 0 ? '✅ 诊断口 13400 开放：可点「连接」读车辆信息/故障码' : '✖ 未见诊断口 13400 —— 车辆诊断网关应为 192.168.49.1，当前主机多半不对');
   lines.push('（把结果截图发给开发者）');
   if (so) so.textContent = lines.join('\\n');
   wifiSt(open.length ? ('发现开放端口：' + open.join(', ')) : '未发现开放端口');
@@ -1259,7 +1274,7 @@ button.big{width:100%;min-height:48px;font-size:15px;font-weight:600;margin-top:
     <h2 class="pageh">WiFi 直连（DoIP 无线诊断）</h2>
     <section class="card">
       <h2>连接车辆热点</h2>
-      <div class="status" id="wifiStatus">① 先把手机连上车辆热点（ZEEHO- 开头；密码为 VIN 末 8 位）→ ② 点「连接」。连不上就先点「网络自检」。建议关闭「设置→蜂窝网络→无线局域网助理」，防止连接被切走。</div>
+      <div class="status" id="wifiStatus">① 先连车辆诊断热点（ZEEHO- 开头；密码为 VIN 末 8 位）——网关固定 192.168.49.1，端口 13400 → ② 点「连接」，再点「读取车辆信息」/「读故障码」。连不上先点「网络自检」。建议关闭「设置→蜂窝网络→无线局域网助理」，防止连接被切走。</div>
       <div class="row">
         <input id="wifiHost" value="192.168.49.1"/>
         <input id="wifiPort" value="13400" style="max-width:90px"/>

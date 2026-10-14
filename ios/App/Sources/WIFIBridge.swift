@@ -83,7 +83,7 @@ final class WIFIBridge {
     static func humanError(_ e: Error) -> String {
         let s = "\(e)"
         if s.contains("rawValue: 53") { return "连接被中止（POSIX 53）：常见原因——本地网络权限未开 / WiFi 被「无线局域网助理」切走 / 网关拒绝" }
-        if s.contains("rawValue: 61") { return "端口未开放（POSIX 61）：网关 IP 可能不对（试试 192.168.0.1，或先点「网络自检」）" }
+        if s.contains("rawValue: 61") { return "端口未开放（POSIX 61）：车辆诊断网关应为 192.168.49.1，或先点「网络自检」确认网关" }
         if s.contains("rawValue: 65") { return "网络不可达（POSIX 65）：手机可能不在车辆热点网段（先点「网络自检」看本机 IP）" }
         if s.contains("rawValue: 51") { return "网络不可达（POSIX 51）：检查是否连着车辆热点" }
         return s

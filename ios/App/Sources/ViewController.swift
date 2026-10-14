@@ -147,7 +147,7 @@ final class ViewController: UIViewController, WKScriptMessageHandler, WKNavigati
             }
             reply(nil)
         case "wifiPortScan":
-            let host = payload.isEmpty ? "192.168.0.1" : payload
+            let host = payload.isEmpty ? "192.168.49.1" : payload
             let ports: [UInt16] = [22, 23, 80, 443, 3000, 5000, 7000, 8000, 8080, 8443, 8888, 9000, 10950, 13400]
             WIFIBridge.shared.probePorts(host: host, ports: ports) { [weak self] res in
                 var out: [String: Any] = ["host": host, "results": res]
