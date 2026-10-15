@@ -1,6 +1,6 @@
 # ZEEHO 无线诊断（zeeho-diag）
 
-极核（ZEEHO）电动摩托车无线诊断工具集：**iPhone / 电脑通过蓝牙适配器直连车辆诊断总线**，读取实时数据、执行 ABS 排气、胎压传感器匹配等维修操作。
+极核（ZEEHO）电动摩托车无线诊断工具集：**iOS/Android/电脑通过蓝牙适配器直连车辆诊断总线**，读取实时数据、执行 ABS 排气、胎压传感器匹配等维修操作。
 
 > ⚠️ 免责声明：仅供个人车辆维护学习使用。写操作（ABS 排气 / 胎压匹配 / NFC 卡 / 清码）会直接改变车辆状态，请按维修手册流程、在安全场地谨慎操作，风险自负。
 
@@ -26,6 +26,14 @@
 - **CAN**：UDS over ISO-TP，500K；诊断地址 `0x7E1/0x714`（响应 +0x80）；例：读 VIN `22 F190`。
 - 数据流解析脚本与命令表由 `tools/` 生成维护，App 内置 93 项（电池/电机/仪表等）。
 
+## 安装
+
+```bash
+cd zeeho-diag
+npm install          # 安装依赖 + 下载 Electron 二进制
+npm start            # 启动桌面诊断工具（Windows）
+```
+
 ## iOS 构建
 
 推送 `ios/**` 改动到 `main` 即触发 GitHub Actions 构建，产物发布到 Release `diag-latest`（未签名 IPA，TrollStore 直接安装）。
@@ -33,3 +41,13 @@
 ## Android 构建与安装
 
 安装 Android SDK（API 35）及 JDK 17 后，在 `android/` 运行 `gradle assembleDebug`；APK 输出到 `android/app/build/outputs/apk/debug/app-debug.apk`。用 `adb install -r android/app/build/outputs/apk/debug/app-debug.apk` 安装。Android 12+ 首次启动需授予“附近设备”蓝牙权限。App 支持 BLE 透传诊断；官方经典蓝牙 SPP 诊断仪、WiFi/DoIP 功能不受支持。
+
+## 桌面端额外能力
+
+| 能力 | 实现 | 说明 |
+| --- | --- | --- |
+| **ECU 全景登记** | `lib/ecus.js` | VCDM/MCU/DASH/LABMS/BMS/BMS2/CHG/ABS/TBOX/BRS 共 10 个 ECU 的 DoIP 逻辑地址 + CAN 地址（`docs/10` 实测）+ 验证状态。`resolveDa()` 优先用已验证地址，未知地址回退 CAN 并打 `⚠未验证` 警告。 |
+| **RS485 私协议解码** | `lib/rs485.js` | 移植 `decode-rs485log.py` + `docs/14`：15 字节链路帧（AB 00 0B 00，XOR 校验，byte13=应用字节）→ 拼出 `43 46 … 45 44` 应用帧（cmd 系统码 / len / 校验和）。支持离线 `*_RS485.txt` 文本与纯链路帧 hex 解码。 |
+| **DID 扫描** | `lib/vehicleService.js` `scanDids()` | 移植 `doip.py --scan-dids`：在 DID 范围内扫 0x22，收集 0x62 正响应，发现某 ECU 暴露的参数。 |
+| **多 ECU 身份读取** | `lib/vehicleService.js` `readEcuInfo()` | 按 ECU 解析地址后只读 VIN/零件号/软件版本/供应商。 |
+| **写操作** | `lib/routines.js` | 清故障码(0x14)/ECU 复位(0x11)/通用例程(0x31)。**默认硬禁**，必须显式 `allowWrite:true`；ABS 排气/胎压匹配的 routine ID 由调用方（实测抓包）提供，不硬编码厂商私有 ID。 |

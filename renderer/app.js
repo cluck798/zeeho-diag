@@ -227,7 +227,7 @@ async function readStreamsOnce() {
   const btn = $("btnDsRead");
   setBusy(btn, true, "读取中…");
   try {
-    const r = await window.diag.readStreams({ group: $("dsGroup").value, da: $("dsTarget").value });
+    const r = await window.diag.readStreams({ group: $("dsGroup").value, ecu: $("dsEcu").value });
     if (!r.ok) { log("数据流读取失败: " + r.message); return; }
     renderStreams(r.items);
   } catch (e) {
@@ -274,12 +274,164 @@ $("btnRawDid").addEventListener("click", async () => {
   const btn = $("btnRawDid");
   setBusy(btn, true, "读取中…");
   try {
-    const r = await window.diag.readRawDid({ did, da: $("dsTarget").value });
+    const r = await window.diag.readRawDid({ did, da: $("dsEcu").value });
     $("rawOut").textContent = r.ok ? r.hex : (r.message || "失败");
   } finally {
     setBusy(btn, false);
   }
 });
+
+// ---------- 本项目 research 能力 UI ----------
+async function populateEcus() {
+  let list = [];
+  try { list = await window.diag.ecuList(); } catch (e) { return; }
+  const opts = list.map((e) =>
+    `<option value="${e.key}">${e.label}${e.verified ? "" : " ⚠未验证"} (DA=${e.doipDa != null ? e.doipDa : "?"})</option>`
+  ).join("");
+  for (const sel of ["dsEcu", "ecuPicker", "maintEcu"]) {
+    const el = $(sel);
+    if (el) el.innerHTML = opts;
+  }
+  // 数据流默认 MCU
+  if ($("dsEcu")) $("dsEcu").value = "mcu";
+}
+
+$("btnReadEcu").addEventListener("click", async () => {
+  const btn = $("btnReadEcu");
+  const ecu = $("ecuPicker").value;
+  setBusy(btn, true, "读取中…");
+  try {
+    const r = await window.diag.readEcuInfo({ ecu });
+    if (!r.ok) { log("读取失败: " + r.message); return; }
+    const info = r.info;
+    $("ecuWarn").textContent = info.warn || (info.verified ? "" : "（该 ECU 地址未经真机验证）");
+    $("ecuWarn").style.color = info.warn ? "var(--warn)" : "var(--muted)";
+    const kv = $("ecuKv");
+    kv.style.display = "grid";
+    kv.innerHTML = "";
+    const rows = [
+      ["ECU", info.label + (info.verified ? " ✓已验证" : " ⚠未验证")],
+      ["DoIP DA", String(info.da)],
+      ["VIN", info.dids.vin || "—"],
+      ["零件号", info.dids.partNumber || "—"],
+      ["软件版本", info.dids.softwareVersion || "—"],
+      ["供应商", info.dids.supplierName || "—"]
+    ];
+    for (const [k, v] of rows) kv.innerHTML += `<div class="k">${k}</div><div class="v">${v}</div>`;
+    log(`读取 ${info.label} 身份 DID 完成（DA=${info.da}）`);
+  } catch (e) {
+    log("ECU 读取异常: " + e.message);
+  } finally {
+    setBusy(btn, false);
+  }
+});
+
+$("btnScanDids").addEventListener("click", async () => {
+  const btn = $("btnScanDids");
+  setBusy(btn, true, "扫描中…");
+  $("scanGrid").innerHTML = "";
+  $("scanProg").textContent = "扫描中…";
+  try {
+    const r = await window.diag.scanDids({
+      start: $("scanStart").value.trim(),
+      end: $("scanEnd").value.trim(),
+      ecu: $("ecuPicker").value
+    });
+    if (!r.ok) { log("扫描失败: " + r.message); $("scanProg").textContent = r.message; return; }
+    const grid = $("scanGrid");
+    if (!r.found.length) {
+      $("scanProg").textContent = "未命中（该 ECU 在范围内未暴露 DID，或地址未验证）";
+      return;
+    }
+    for (const f of r.found) {
+      const el = document.createElement("div");
+      el.className = "ds-item";
+      el.innerHTML = `<div class="n">DID 0x${f.did}</div><div class="v" style="font-size:12px">${f.hex}</div>`;
+      el.title = "DA=" + f.da;
+      grid.appendChild(el);
+    }
+    $("scanProg").textContent = `命中 ${r.found.length} 个`;
+  } catch (e) {
+    $("scanProg").textContent = e.message;
+  } finally {
+    setBusy(btn, false);
+  }
+});
+
+$("btnRs485Decode").addEventListener("click", async () => {
+  const btn = $("btnRs485Decode");
+  const text = $("rs485Input").value;
+  setBusy(btn, true, "解码中…");
+  $("rs485Grid").innerHTML = "";
+  try {
+    const r = await window.diag.rs485Decode({ text });
+    if (!r.ok) { log("RS485 解码失败: " + r.message); return; }
+    $("rs485Summary").textContent =
+      `链路帧 ${r.linkFrames}（校验错 ${r.xorErrors}）· 应用帧 ${r.appFrames} · 流 ${r.streamBytes}B` +
+      (r.cmdDistribution ? " · 命令分布: " + Object.entries(r.cmdDistribution).map(([k, v]) => `${k}×${v}`).join(" ") : "");
+    const grid = $("rs485Grid");
+    for (const f of (r.frames || [])) {
+      const el = document.createElement("div");
+      el.className = "ds-item" + (f.chkOk ? "" : " fail");
+      const dataHex = f.data.slice(0, 24).toString("hex").toUpperCase() + (f.data.length > 24 ? "…" : "");
+      el.innerHTML =
+        `<div class="n">cmd 0x${f.cmd.toString(16).toUpperCase()} · ${f.cmdName}</div>` +
+        `<div class="v" style="font-size:12px">len=${f.len} chk${f.chkOk ? "✓" : "✗"}</div>` +
+        `<div class="n" style="font-family:Consolas,monospace">${dataHex}</div>`;
+      grid.appendChild(el);
+    }
+    log(`RS485 解码：链路帧 ${r.linkFrames}（XOR 错 ${r.xorErrors}），应用帧 ${r.appFrames}`);
+  } catch (e) {
+    log("RS485 解码异常: " + e.message);
+  } finally {
+    setBusy(btn, false);
+  }
+});
+
+function maintGuard() {
+  if (!$("allowWrite").checked) {
+    log("⚠ 写操作被拦截：请先勾选「我已确认风险，允许写操作」。");
+    return false;
+  }
+  return true;
+}
+
+$("btnClearDtc").addEventListener("click", async () => {
+  if (!maintGuard()) return;
+  const btn = $("btnClearDtc");
+  setBusy(btn, true, "执行中…");
+  try {
+    const r = await window.diag.clearFaultCodes({ ecu: $("maintEcu").value, allowWrite: true });
+    $("maintOut").textContent = r.message;
+    log("清除故障码: " + r.message + (r.raw ? " (" + r.raw + ")" : ""));
+  } finally { setBusy(btn, false); }
+});
+
+$("btnEcuReset").addEventListener("click", async () => {
+  if (!maintGuard()) return;
+  const btn = $("btnEcuReset");
+  setBusy(btn, true, "执行中…");
+  try {
+    const r = await window.diag.ecuReset({ ecu: $("maintEcu").value, allowWrite: true });
+    $("maintOut").textContent = r.message;
+    log("ECU 复位: " + r.message + (r.raw ? " (" + r.raw + ")" : ""));
+  } finally { setBusy(btn, false); }
+});
+
+$("btnRoutine").addEventListener("click", async () => {
+  if (!maintGuard()) return;
+  const rid = $("routineId").value.trim();
+  if (!rid) { log("请填写例程 ID（来自实测抓包）"); return; }
+  const btn = $("btnRoutine");
+  setBusy(btn, true, "执行中…");
+  try {
+    const r = await window.diag.runRoutine({ ecu: $("maintEcu").value, routineId: rid, allowWrite: true });
+    $("maintOut").textContent = r.message;
+    log(`例程 ${rid}: ` + r.message + (r.raw ? " (" + r.raw + ")" : ""));
+  } finally { setBusy(btn, false); }
+});
+
+populateEcus();
 
 setPill("未连接", "");
 log("极核诊断工具已启动。步骤：1) 蓝牙扫描或手动输入 → 2) 连接车辆热点 → 3) 连接诊断接口并读取。");

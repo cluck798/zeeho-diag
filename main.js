@@ -6,6 +6,9 @@ const { DiagClient } = require("./lib/diagClient");
 const vehicle = require("./lib/vehicleService");
 const wifi = require("./lib/wifi");
 const ble = require("./lib/ble");
+const ecus = require("./lib/ecus");
+const rs485 = require("./lib/rs485");
+const routines = require("./lib/routines");
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -134,14 +137,21 @@ function registerIpc() {
     return { ok: true, hex: require("./lib/protocol").bytesToHex(udsData) };
   });
 
-  // 实时数据（数据流）读取：group=bms|mcu|... da=vcdm|mcu
-  ipcMain.handle("diag:readStreams", async (_e, { group, da } = {}) => {
+  // 实时数据（数据流）读取：group=bms|mcu|... da=vcdm|mcu | ecu=<ECU key>
+  ipcMain.handle("diag:readStreams", async (_e, { group, da, ecu } = {}) => {
     if (!diagClient) return { ok: false, message: "未连接" };
     const { groups } = require("./lib/datastreams");
     const defs = groups[group];
     if (!defs || !defs.length) return { ok: false, message: "未知数据组: " + group };
-    const target = da === "vcdm" ? 1 : 2; // 1=VCDM, 2=MCU（默认 MCU）
-    logLine(`读取数据流 [${group}] 目标=${da === "vcdm" ? "VCDM(1)" : "MCU(2)"}，共 ${defs.length} 项…`);
+    let target = da === "vcdm" ? 1 : 2; // 1=VCDM, 2=MCU（默认 MCU）
+    let label = da === "vcdm" ? "VCDM(1)" : "MCU(2)";
+    if (ecu) {
+      const info = ecus.resolveDa(ecu);
+      target = info.da;
+      label = `${info.label}(DA=${info.da})`;
+      if (info.warn) logLine("⚠ " + info.warn);
+    }
+    logLine(`读取数据流 [${group}] 目标=${label}，共 ${defs.length} 项…`);
     try {
       const items = await vehicle.readDataStreams(diagClient, defs, { da: target, timeout: 1000, log: logLine });
       const okCount = items.filter((i) => i.ok).length;
@@ -169,6 +179,79 @@ function registerIpc() {
   ipcMain.handle("diag:disconnect", async () => {
     if (diagClient) { diagClient.close(); diagClient = null; }
     return { ok: true };
+  });
+
+  // ---------- 本项目 research 能力注入 ----------
+
+  // ECU 全景登记表
+  ipcMain.handle("ecu:list", async () => ecus.listEcus());
+
+  // DID 扫描（研究：发现某 ECU 暴露的 DID）
+  ipcMain.handle("diag:scanDids", async (_e, { start, end, ecu, da } = {}) => {
+    if (!diagClient) return { ok: false, message: "未连接" };
+    try {
+      const found = await vehicle.scanDids(diagClient, {
+        startHex: start, endHex: end, ecu, da,
+        onProgress: (p) => logLine(`DID 扫描 ${p.scanned}/${p.total}，命中 ${p.found}`),
+        onFound: (f) => logLine(`  命中 DID 0x${f.did} → ${f.hex}`),
+        log: logLine
+      });
+      return { ok: true, found };
+    } catch (e) {
+      return { ok: false, message: e.message };
+    }
+  });
+
+  // 读取某 ECU 身份 DID（多 ECU 探查，只读）
+  ipcMain.handle("diag:readEcuInfo", async (_e, { ecu, da } = {}) => {
+    if (!diagClient) return { ok: false, message: "未连接" };
+    try {
+      const info = await vehicle.readEcuInfo(diagClient, ecu != null ? ecu : da, { log: logLine });
+      return { ok: true, info };
+    } catch (e) {
+      return { ok: false, message: e.message };
+    }
+  });
+
+  // RS485 离线日志解码（粘贴 *_RS485.txt 文本或纯链路帧 hex）
+  ipcMain.handle("rs485:decode", async (_e, { text, hex } = {}) => {
+    try {
+      const res = text ? rs485.decodeRs485Log(text) : rs485.decodeRs485LinkHex(hex || "");
+      return { ok: true, ...res };
+    } catch (e) {
+      return { ok: false, message: e.message };
+    }
+  });
+
+  // 写操作（必须 allowWrite，复刻红线）
+  ipcMain.handle("diag:clearFaultCodes", async (_e, { ecu, da, allowWrite } = {}) => {
+    if (!diagClient) return { ok: false, message: "未连接" };
+    try {
+      const r = await routines.clearFaultCodes(diagClient, { ecu, da, allowWrite, log: logLine });
+      return { ok: r.ok, message: r.message, raw: r.raw };
+    } catch (e) {
+      return { ok: false, message: e.message };
+    }
+  });
+
+  ipcMain.handle("diag:ecuReset", async (_e, { ecu, da, allowWrite } = {}) => {
+    if (!diagClient) return { ok: false, message: "未连接" };
+    try {
+      const r = await routines.ecuReset(diagClient, { ecu, da, allowWrite, log: logLine });
+      return { ok: r.ok, message: r.message, raw: r.raw };
+    } catch (e) {
+      return { ok: false, message: e.message };
+    }
+  });
+
+  ipcMain.handle("diag:runRoutine", async (_e, { ecu, da, routineId, sub, data, allowWrite } = {}) => {
+    if (!diagClient) return { ok: false, message: "未连接" };
+    try {
+      const r = await routines.runRoutine(diagClient, { ecu, da, routineId, sub, data, allowWrite, log: logLine });
+      return { ok: r.ok, message: r.message, raw: r.raw };
+    } catch (e) {
+      return { ok: false, message: e.message };
+    }
   });
 }
 

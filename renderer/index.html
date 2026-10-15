@@ -129,7 +129,7 @@
           <option value="bms2">电池 BMS（变体）</option>
           <option value="mcuLite">电机 MCU（精简）</option>
         </select>
-        <select id="dsTarget">
+        <select id="dsEcu">
           <option value="mcu">目标: MCU(2)</option>
           <option value="vcdm">目标: VCDM(1)</option>
         </select>
@@ -143,6 +143,57 @@
         <button id="btnRawDid" class="ghost">读原始响应</button>
         <span id="rawOut" style="font-family:Consolas,monospace;font-size:12px;word-break:break-all;color:var(--muted)"></span>
       </div>
+    </div>
+
+    <!-- 步骤4.5：ECU 探查 + DID 扫描（本项目 research 能力） -->
+    <div class="card full">
+      <h2><span class="step">5</span>ECU 探查 / DID 扫描（研究）</h2>
+      <div class="row">
+        <select id="ecuPicker"></select>
+        <button id="btnReadEcu" class="ghost">读该 ECU 身份 DID</button>
+        <span class="hint" id="ecuWarn"></span>
+      </div>
+      <div class="kv" id="ecuKv" style="display:none"></div>
+      <div class="row" style="margin-top:14px">
+        <span style="color:var(--muted)">DID 扫描范围</span>
+        <input id="scanStart" value="0100" style="width:90px" />
+        <span>~</span>
+        <input id="scanEnd" value="0FFF" style="width:90px" />
+        <button id="btnScanDids" class="green">扫描 DID</button>
+        <span class="hint" id="scanProg"></span>
+      </div>
+      <div class="ds-grid" id="scanGrid" style="max-height:220px"></div>
+    </div>
+
+    <!-- RS485 离线解码（本项目 research：私协议 43 46…45 44） -->
+    <div class="card full">
+      <h2><span class="step">6</span>RS485 私协议解码（离线）</h2>
+      <div class="hint">粘贴 OBDSTAR/ZSCAN 的 <code>*_RS485.txt</code> 抓包文本（每行 <code>时间|hex</code>），或纯链路帧 hex（每 30 hex 一帧）。解码 15 字节链路帧 → 拼出 43 46…45 44 应用帧。</div>
+      <textarea id="rs485Input" style="width:100%;height:120px;background:#0c0f12;border:1px solid var(--border);border-radius:8px;color:#9fb4c7;font:12px/1.6 Consolas,monospace;padding:10px;margin-top:8px" placeholder="例如：&#10;00:00:01 656| AB 00 0B 00 34 00 00 02 00 00 00 00 00 43 1F &#10;..."></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="btnRs485Decode" class="green">解码</button>
+        <span class="hint" id="rs485Summary"></span>
+      </div>
+      <div class="ds-grid" id="rs485Grid" style="max-height:260px"></div>
+    </div>
+
+    <!-- 维修操作（写类，红线门控：必须确认） -->
+    <div class="card full">
+      <h2><span class="step">7</span>维修操作（写类 · 需确认）</h2>
+      <div class="row">
+        <select id="maintEcu"></select>
+        <label style="display:flex;align-items:center;gap:6px;color:var(--warn)">
+          <input type="checkbox" id="allowWrite" /> 我已确认风险，允许写操作
+        </label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="btnClearDtc" class="ghost">清除故障码 (0x14)</button>
+        <button id="btnEcuReset" class="ghost">ECU 复位 (0x11 01)</button>
+        <input id="routineId" placeholder="例程 ID(0201)" style="width:120px" />
+        <button id="btnRoutine" class="ghost">运行例程 (0x31)</button>
+        <span class="hint" id="maintOut"></span>
+      </div>
+      <div class="hint" style="margin-top:6px">⚠ 写操作会直接改变车辆状态。ABS 排气 / 胎压匹配的 routine ID 需来自实测抓包，本工具不臆造任何厂商私有 ID。</div>
     </div>
 
     <!-- 日志 -->
