@@ -66,8 +66,10 @@ class ServerCB : public BLEServerCallbacks {
 // 收到 App 写入的 11 字节帧 -> 发到 CAN 总线
 class WriteCB : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic* c) override {
-    // 兼容 ESP32 Arduino 核心 2.x(String 返回值) 与 3.x(std::string 返回值)
-    String val = c->getValue().c_str();
+    // 兼容 ESP32 Arduino 核心 2.x(String 返回值) 与 3.x(std::string 返回值)。
+    // 注意：不能用 .c_str() 取值——CAN 数据场含 0x00 时会在首个 0 处截断，
+    // 导致 0 之后的非零字节丢失（如 31 01 3A 00 0D 01 03 被截成 31 01 3A 00）。
+    auto val = c->getValue();
     size_t n = val.length();
     if (n < 3) return;
     uint16_t id = ((uint8_t)val[0] << 8) | (uint8_t)val[1];

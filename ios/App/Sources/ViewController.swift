@@ -6,13 +6,16 @@
 import UIKit
 import WebKit
 
-final class ViewController: UIViewController, WKScriptMessageHandler {
+final class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate {
 
     private var webView: WKWebView!
+    private var diagBanner: UILabel?
 
-    /// 注入到诊断页的桥接脚本（r485 帮助函数 + 回调派发；独立 App 无「返回面板」按钮，隐藏之）
+    /// 注入到诊断页的桥接脚本（r485 帮助函数 + 回调派发）。
+    /// 注意：WKUserScript 的 source 必须是纯 JS——不能包 <script> 标签，
+    /// 否则按 JS 解析直接语法错误、整段静默失效（事件/回调全部丢失）。
     private static let hookScript = """
-    <script>(function(){if(window.__r485Hook)return;window.__r485Hook=1;
+    (function(){if(window.__r485Hook)return;window.__r485Hook=1;
     window.r485=function(cmd,data,cb){
       var id='r485_'+Date.now()+'_'+Math.floor(Math.random()*1e6);
       window.__r485Cbs=window.__r485Cbs||{};
@@ -21,8 +24,7 @@ final class ViewController: UIViewController, WKScriptMessageHandler {
     };
     window.__r485Cb=function(id,json){try{var cb=(window.__r485Cbs||{})[id];if(cb){delete window.__r485Cbs[id];cb(json)}}catch(e){}};
     window.__r485Event=function(json){try{if(window.onR485Event)window.onR485Event(json)}catch(e){}};
-    var b=document.getElementById('btnBack');if(b)b.style.display='none';
-    })();</script>
+    })();
     """
 
     override func viewDidLoad() {
@@ -39,6 +41,7 @@ final class ViewController: UIViewController, WKScriptMessageHandler {
         config.userContentController = userCtrl
 
         let wv = WKWebView(frame: .zero, configuration: config)
+        wv.navigationDelegate = self
         wv.translatesAutoresizingMaskIntoConstraints = false
         wv.isOpaque = false
         wv.backgroundColor = view.backgroundColor
@@ -144,7 +147,7 @@ final class ViewController: UIViewController, WKScriptMessageHandler {
             }
             reply(nil)
         case "wifiPortScan":
-            let host = payload.isEmpty ? "192.168.0.1" : payload
+            let host = payload.isEmpty ? "192.168.49.1" : payload
             let ports: [UInt16] = [22, 23, 80, 443, 3000, 5000, 7000, 8000, 8080, 8443, 8888, 9000, 10950, 13400]
             WIFIBridge.shared.probePorts(host: host, ports: ports) { [weak self] res in
                 var out: [String: Any] = ["host": host, "results": res]
@@ -162,5 +165,37 @@ final class ViewController: UIViewController, WKScriptMessageHandler {
 
     private func evaluateJS(_ js: String) {
         webView.evaluateJavaScript(js, completionHandler: nil)
+    }
+
+    // MARK: - 加载自检（页面脚本没跑起来时给出可见提示，避免"按钮全没反应"无从排查）
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        webView.evaluateJavaScript("window.__diagReady===1") { [weak self] res, err in
+            guard (res as? Bool) != true else { return }
+            let ver = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+            let reason = (err != nil) ? "探测执行失败" : "diag.html 内联脚本未执行（可能被拦截或语法不兼容）"
+            DispatchQueue.main.async { self?.showDiagBanner("页面初始化失败（v\(ver)）：\(reason)。请截图反馈开发者。") }
+        }
+    }
+
+    private func showDiagBanner(_ text: String) {
+        if diagBanner == nil {
+            let lb = UILabel()
+            lb.numberOfLines = 0
+            lb.font = .systemFont(ofSize: 13, weight: .semibold)
+            lb.textColor = .white
+            lb.backgroundColor = UIColor.systemRed
+            lb.layer.cornerRadius = 8
+            lb.clipsToBounds = true
+            lb.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(lb)
+            view.bringSubviewToFront(lb)
+            NSLayoutConstraint.activate([
+                lb.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 6),
+                lb.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
+                lb.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12)
+            ])
+            diagBanner = lb
+        }
+        diagBanner?.text = " " + text + " "
     }
 }
