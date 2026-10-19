@@ -6,6 +6,7 @@ const { DiagClient } = require("./lib/diagClient");
 const vehicle = require("./lib/vehicleService");
 const wifi = require("./lib/wifi");
 const ble = require("./lib/ble");
+const { parseDtcResponse } = require("./lib/dtc");
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -127,11 +128,13 @@ function registerIpc() {
     return { ok: true, online };
   });
 
-  // 读故障码（原始字节，UI 展示 hex）
+  // 读故障码（原始字节 + ISO 14229 解码）
   ipcMain.handle("diag:readFaultCodes", async () => {
     if (!diagClient) return { ok: false, message: "未连接" };
     const udsData = await vehicle.readFaultCodes(diagClient, logLine);
-    return { ok: true, hex: require("./lib/protocol").bytesToHex(udsData) };
+    const dtc = parseDtcResponse(udsData);
+    if (dtc.dtcs.length) logLine(`故障码 ${dtc.dtcs.length} 条：` + dtc.dtcs.map((d) => d.code).join(", "));
+    return { ok: true, hex: require("./lib/protocol").bytesToHex(udsData), dtc };
   });
 
   // 实时数据（数据流）读取：group=bms|mcu|... da=vcdm|mcu

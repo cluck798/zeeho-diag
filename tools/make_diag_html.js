@@ -563,6 +563,31 @@ var WU = {
 function wifiSt(t) { var el = $('wifiStatus'); if (el) el.textContent = t; }
 function wLog(t) { logLine('WIFI', t); }
 function wUdsOf(pdu) { return pdu.slice(16); }
+
+// ---- UDS 故障码解码（ISO 14229）：59 02 <组掩码> 之后每 4 字节 = 3 字节 DTC + 1 字节状态 ----
+// 3 字节 DTC = 2 字节故障码 + 1 字节故障类型(FTB)，如 01 23 16 → P0123-16
+var WDTC_SYS = ['P', 'C', 'B', 'U'];
+function wDtcCode(b) {
+  if (!b || b.length < 3) return '';
+  var letter = WDTC_SYS[(b[0] >> 6) & 3];
+  var firstDigit = (b[0] >> 4) & 3;
+  var n = ((b[0] & 15) << 8) | (b[1] & 255);
+  var h = n.toString(16).toUpperCase();
+  while (h.length < 3) h = '0' + h;
+  return letter + firstDigit + h + '-' + wHexOf([b[2]]);
+}
+function wDtcStatus(s) {
+  var f = [];
+  if (s & 1) f.push('当前故障');
+  if (s & 2) f.push('本周期失败');
+  if (s & 4) f.push('待定');
+  if (s & 8) f.push('已确认');
+  if (s & 16) f.push('清码后未测试');
+  if (s & 32) f.push('清码后失败');
+  if (s & 64) f.push('本周期未测试');
+  if (s & 128) f.push('警告灯点亮');
+  return f.length ? f.join('/') : '无状态位';
+}
 window.onWifiEvent = function (ev) {
   if (!ev || !ev.type) return;
   if (ev.type === 'connected') {
@@ -674,10 +699,13 @@ function wifiReadDtc() {
     wLog('← DTC 原始: ' + wHexOf(u));
     var dtcs = [];
     if (u[0] === 0x59 && u[1] === 0x02) {
-      for (var i = 3; i + 3 < u.length; i += 4) dtcs.push(wHexOf(u.slice(i, i + 3)) + ' [' + wHexOf([u[i + 3]]) + ']');
+      for (var i = 3; i + 3 < u.length; i += 4) {
+        var cb3 = u.slice(i, i + 3), stb = u[i + 3];
+        dtcs.push(wDtcCode(cb3) + ' ｜ 状态 ' + wHexOf([stb]) + '（' + wDtcStatus(stb) + '）');
+      }
     }
     if (dtcs.length) wifiRender(dtcs.map(function (d, i) { return ['DTC' + (i + 1), d]; }));
-    else wifiRender([['故障码', '无（' + wHexOf(u) + '）']]);
+    else wifiRender([['故障码', (u[0] === 0x59 ? '无故障码' : '未识别') + '（原始 ' + wHexOf(u) + '）']]);
     wifiSt('故障码读取完成：' + (dtcs.length ? dtcs.length + ' 条' : '无'));
   }, 2500);
 }

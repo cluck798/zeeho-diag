@@ -201,6 +201,20 @@ $("btnReadFault").addEventListener("click", async () => {
     if (r.ok) {
       $("faultRow").style.display = "flex";
       $("faultHex").textContent = r.hex || "（空响应）";
+      const d = r.dtc || { supported: false, dtcs: [] };
+      const row = $("faultDtcRow");
+      if (d.dtcs && d.dtcs.length) {
+        row.style.display = "flex";
+        $("faultDtc").textContent = d.dtcs
+          .map((x) => `DTC${x.index}  ${x.code}  状态 ${x.statusText}`)
+          .join("\n");
+      } else if (d.supported) {
+        row.style.display = "flex";
+        const mask = "0x" + (d.mask == null ? 0 : d.mask).toString(16).toUpperCase().padStart(2, "0");
+        $("faultDtc").textContent = `无故障码（组掩码 ${mask}）`;
+      } else {
+        row.style.display = "none";
+      }
       log("故障码响应: " + (r.hex || "空"));
     } else {
       log("读故障码失败: " + r.message);
