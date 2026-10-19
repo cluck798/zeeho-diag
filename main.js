@@ -71,18 +71,29 @@ function registerIpc() {
 
   // 扫描可见 WiFi（找 ZEEHO- 热点）
   ipcMain.handle("wifi:scan", async () => {
+    const pf = wifi.preflight();
+    if (!pf.ok) {
+      logLine(pf.message);
+      return [];
+    }
     const networks = await wifi.scanNetworks();
     return networks.filter((n) => /^ZEEHO-/i.test(n));
   });
 
   // 连接 WiFi
   ipcMain.handle("wifi:connect", async (_e, { ssid, password }) => {
+    const pf = wifi.preflight();
+    if (!pf.ok) {
+      logLine(pf.message);
+      return { ok: false, message: pf.message };
+    }
     logLine(`连接 WiFi: ${ssid}`);
     return await wifi.connectWifi(ssid, password, logLine);
   });
 
   // 当前 WiFi 状态
   ipcMain.handle("wifi:status", async () => {
+    if (!wifi.preflight().ok) return null;
     return await wifi.currentWifiStatus();
   });
 
